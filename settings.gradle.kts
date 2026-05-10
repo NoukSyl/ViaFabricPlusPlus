@@ -7,7 +7,7 @@ pluginManagement {
     }
 
     plugins {
-        id("net.fabricmc.fabric-loom") version "1.9-SNAPSHOT"
+        id("net.fabricmc.fabric-loom") version "1.9"
         id("de.florianreuth.baseproject") version "2.0.2"
     }
 }
