@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,14 +24,15 @@ package com.viaversion.viafabricplus.screen.impl;
 import com.viaversion.viafabricplus.ViaFabricPlusImpl;
 import com.viaversion.viafabricplus.screen.VFPScreen;
 import com.viaversion.viaversion.util.DumpUtil;
+import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.text.Text;
+import net.minecraft.util.Util;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.File;
 import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.network.chat.Component;
-import net.minecraft.util.Util;
-import org.jetbrains.annotations.Nullable;
 
 public final class ReportIssuesScreen extends VFPScreen {
 
@@ -42,31 +43,31 @@ public final class ReportIssuesScreen extends VFPScreen {
     private long delay = -1;
 
     public ReportIssuesScreen() {
-        super(Component.translatable("screen.viafabricplus.report_issues"), true);
+        super(Text.translatable("screen.viafabricplus.report_issues"), true);
 
         if (!actions.isEmpty()) {
             return;
         }
         actions.put("report.viafabricplus.bug_report", () -> {
-            Util.getPlatform().openUri(URI.create("https://github.com/ViaVersion/ViaFabricPlus/issues/new?assignees=&labels=bug&projects=&template=bug_report.yml"));
-            this.setupSubtitle(Component.translatable("report.viafabricplus.bug_report.response"));
+            Util.getOperatingSystem().open(URI.create("https://github.com/ViaVersion/ViaFabricPlus/issues/new?assignees=&labels=bug&projects=&template=bug_report.yml"));
+            this.setupSubtitle(Text.translatable("report.viafabricplus.bug_report.response"));
         });
         actions.put("report.viafabricplus.feature_request", () -> {
-            Util.getPlatform().openUri(URI.create("https://github.com/ViaVersion/ViaFabricPlus/issues/new?assignees=&labels=enhancement&projects=&template=feature_request.yml"));
-            this.setupSubtitle(Component.translatable("report.viafabricplus.feature_request.response"));
+            Util.getOperatingSystem().open(URI.create("https://github.com/ViaVersion/ViaFabricPlus/issues/new?assignees=&labels=enhancement&projects=&template=feature_request.yml"));
+            this.setupSubtitle(Text.translatable("report.viafabricplus.feature_request.response"));
         });
-        actions.put("report.viafabricplus.create_via_dump", () -> DumpUtil.postDump(minecraft.getUser().getProfileId()).whenComplete((s, throwable) -> {
+        actions.put("report.viafabricplus.create_via_dump", () -> DumpUtil.postDump(client.getSession().getUuidOrNull()).whenComplete((s, throwable) -> {
             if (throwable != null) {
-                this.setupSubtitle(Component.translatable("report.viafabricplus.create_via_dump.failed"));
-                ViaFabricPlusImpl.INSTANCE.getLogger().error("Failed to create a dump", throwable);
+                this.setupSubtitle(Text.translatable("report.viafabricplus.create_via_dump.failed"));
+                ViaFabricPlusImpl.INSTANCE.logger().error("Failed to create a dump", throwable);
                 return;
             }
-            this.setupSubtitle(Component.translatable("report.viafabricplus.create_via_dump.success"));
-            minecraft.keyboardHandler.setClipboard(s);
+            this.setupSubtitle(Text.translatable("report.viafabricplus.create_via_dump.success"));
+            client.keyboard.setClipboard(s);
         }));
         actions.put("report.viafabricplus.open_logs", () -> {
-            Util.getPlatform().openFile(new File(minecraft.gameDirectory, "logs") /* there is no constant for this in the game */);
-            this.setupSubtitle(Component.translatable("report.viafabricplus.open_logs.response"));
+            Util.getOperatingSystem().open(new File(client.runDirectory, "logs") /* there is no constant for this in the game */);
+            this.setupSubtitle(Text.translatable("report.viafabricplus.open_logs.response"));
         });
     }
 
@@ -77,14 +78,14 @@ public final class ReportIssuesScreen extends VFPScreen {
 
         int i = 0;
         for (Map.Entry<String, Runnable> entry : actions.entrySet()) {
-            this.addRenderableWidget(Button.builder(Component.translatable(entry.getKey()), button -> entry.getValue().run()).
-                    pos(this.width / 2 - 100, this.height / 2 - 25 + i * (20 + 3)).size(200, 20).build());
+            this.addDrawableChild(ButtonWidget.builder(Text.translatable(entry.getKey()), button -> entry.getValue().run()).
+                    position(this.width / 2 - 100, this.height / 2 - 25 + i * (20 + 3)).size(200, 20).build());
             i++;
         }
     }
 
     @Override
-    public void setupSubtitle(@Nullable Component subtitle) {
+    public void setupSubtitle(@Nullable Text subtitle) {
         super.setupSubtitle(subtitle);
 
         this.delay = System.currentTimeMillis();

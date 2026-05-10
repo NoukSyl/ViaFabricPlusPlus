@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,8 +25,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.viaversion.viafabricplus.ViaFabricPlusImpl;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
+
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -44,7 +44,7 @@ public abstract class AbstractSave {
      * @param name The name of the file.
      */
     public AbstractSave(final String name) {
-        path = ViaFabricPlusImpl.INSTANCE.getPath().resolve(name + ".json");
+        path = ViaFabricPlusImpl.INSTANCE.rootPath().resolve(name + ".json");
     }
 
     /**
@@ -53,15 +53,15 @@ public abstract class AbstractSave {
      */
     public void init() {
         if (Files.exists(path)) {
-            try (final BufferedReader reader = Files.newBufferedReader(path)) {
-                final JsonObject object = GSON.fromJson(reader, JsonObject.class);
+            try {
+                final JsonObject object = GSON.fromJson(Files.readString(path), JsonObject.class);
                 if (object != null) {
                     read(object);
                 } else {
-                    ViaFabricPlusImpl.INSTANCE.getLogger().error("The file {} is empty!", path.getFileName());
+                    ViaFabricPlusImpl.INSTANCE.logger().error("The file {} is empty!", path.getFileName());
                 }
             } catch (Exception e) {
-                ViaFabricPlusImpl.INSTANCE.getLogger().error("Failed to read file: {}!", path.getFileName(), e);
+                ViaFabricPlusImpl.INSTANCE.logger().error("Failed to read file: {}!", path.getFileName(), e);
             }
         }
     }
@@ -70,13 +70,13 @@ public abstract class AbstractSave {
      * This method should be called when the file should be saved.
      */
     public void save() {
-        try (final BufferedWriter writer = Files.newBufferedWriter(path, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+        try {
             final JsonObject object = new JsonObject();
             write(object);
 
-            GSON.toJson(object, writer);
+            Files.writeString(path, GSON.toJson(object), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
         } catch (Exception e) {
-            ViaFabricPlusImpl.INSTANCE.getLogger().error("Failed to write file: {}!", path.getFileName(), e);
+            ViaFabricPlusImpl.INSTANCE.logger().error("Failed to write file: {}!", path.getFileName(), e);
         }
     }
 

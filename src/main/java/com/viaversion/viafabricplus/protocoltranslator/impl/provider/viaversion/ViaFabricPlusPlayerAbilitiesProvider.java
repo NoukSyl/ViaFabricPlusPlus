@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,18 +23,18 @@ package com.viaversion.viafabricplus.protocoltranslator.impl.provider.viaversion
 
 import com.viaversion.viaversion.api.connection.UserConnection;
 import com.viaversion.viaversion.protocols.v1_15_2to1_16.provider.PlayerAbilitiesProvider;
-import net.minecraft.client.Minecraft;
+import net.minecraft.client.MinecraftClient;
 
 public final class ViaFabricPlusPlayerAbilitiesProvider extends PlayerAbilitiesProvider {
 
     @Override
     public float getFlyingSpeed(UserConnection connection) {
-        return Minecraft.getInstance().player.getAbilities().getFlyingSpeed();
+        return MinecraftClient.getInstance().player.getAbilities().getFlySpeed();
     }
 
     @Override
     public float getWalkingSpeed(UserConnection connection) {
-        return Minecraft.getInstance().player.getAbilities().getWalkingSpeed();
+        return MinecraftClient.getInstance().player.getAbilities().getWalkSpeed();
     }
 
 }

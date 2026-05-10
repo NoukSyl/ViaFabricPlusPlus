@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,64 +26,43 @@ import com.viaversion.viafabricplus.api.entrypoint.ViaFabricPlusLoadEntrypoint;
 import com.viaversion.viafabricplus.api.events.ChangeProtocolVersionCallback;
 import com.viaversion.viafabricplus.api.events.LoadingCycleCallback;
 import com.viaversion.viafabricplus.api.settings.SettingGroup;
-import com.viaversion.viafabricplus.util.network.SyncTasks;
+import com.viaversion.viafabricplus.base.Events;
+import com.viaversion.viafabricplus.base.overriding_jars.ClassLoaderPriorityUtil;
+import com.viaversion.viafabricplus.base.sync_tasks.SyncTasks;
 import com.viaversion.viafabricplus.features.FeaturesLoading;
-import com.viaversion.viafabricplus.features.item.filter_creative_tabs.VersionedRegistries;
+import com.viaversion.viafabricplus.features.item.filter_creative_tabs.ItemRegistryDiff;
 import com.viaversion.viafabricplus.features.item.negative_item_count.NegativeItemUtil;
 import com.viaversion.viafabricplus.features.limitation.max_chat_length.MaxChatLength;
-import com.viaversion.viafabricplus.injection.access.core.IConnection;
-import com.viaversion.viafabricplus.injection.access.core.IServerData;
+import com.viaversion.viafabricplus.injection.access.base.IClientConnection;
+import com.viaversion.viafabricplus.injection.access.base.IServerInfo;
 import com.viaversion.viafabricplus.protocoltranslator.ProtocolTranslator;
 import com.viaversion.viafabricplus.protocoltranslator.translator.ItemTranslator;
 import com.viaversion.viafabricplus.save.SaveManager;
 import com.viaversion.viafabricplus.screen.impl.ProtocolSelectionScreen;
-import com.viaversion.viafabricplus.screen.impl.SettingsScreen;
+import com.viaversion.viafabricplus.screen.impl.settings.SettingsScreen;
 import com.viaversion.viafabricplus.settings.SettingsManager;
 import com.viaversion.viafabricplus.util.ChatUtil;
-import com.viaversion.viafabricplus.util.ClassLoaderPriorityUtil;
 import com.viaversion.viaversion.api.connection.UserConnection;
 import com.viaversion.viaversion.api.minecraft.item.Item;
 import com.viaversion.viaversion.api.protocol.version.ProtocolVersion;
 import io.netty.channel.Channel;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import net.fabricmc.fabric.api.event.Event;
-import net.fabricmc.fabric.api.event.EventFactory;
 import net.fabricmc.loader.api.FabricLoader;
-import net.fabricmc.loader.api.entrypoint.EntrypointContainer;
 import net.fabricmc.loader.api.metadata.ModMetadata;
-import net.minecraft.world.level.block.entity.BannerPattern;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.multiplayer.ServerData;
-import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.effect.MobEffect;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.network.Connection;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.core.Holder;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.network.ServerInfo;
+import net.minecraft.item.ItemStack;
+import net.minecraft.network.ClientConnection;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 
-import static com.viaversion.viafabricplus.api.entrypoint.ViaFabricPlusLoadEntrypoint.KEY;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public final class ViaFabricPlusImpl implements ViaFabricPlusBase {
-
-    public static final Event<LoadingCycleCallback> LOADING_CYCLE = EventFactory.createArrayBacked(LoadingCycleCallback.class, listeners -> state -> {
-        for (final LoadingCycleCallback listener : listeners) {
-            listener.onLoadCycle(state);
-        }
-    });
-
-    public static final Event<ChangeProtocolVersionCallback> CHANGE_PROTOCOL_VERSION = EventFactory.createArrayBacked(ChangeProtocolVersionCallback.class, listeners -> (oldVersion, newVersion) -> {
-        for (final ChangeProtocolVersionCallback listener : listeners) {
-            listener.onChangeProtocolVersion(oldVersion, newVersion);
-        }
-    });
 
     public static final ViaFabricPlusImpl INSTANCE = new ViaFabricPlusImpl();
 
@@ -92,6 +71,7 @@ public final class ViaFabricPlusImpl implements ViaFabricPlusBase {
 
     private String version;
     private String implVersion;
+
     private CompletableFuture<Void> loadingFuture;
 
     public void init() {
@@ -100,32 +80,41 @@ public final class ViaFabricPlusImpl implements ViaFabricPlusBase {
         final ModMetadata metadata = FabricLoader.getInstance().getModContainer("viafabricplus").get().getMetadata();
         version = metadata.getVersion().getFriendlyString();
         implVersion = metadata.getCustomValue("vfp:implVersion").getAsString();
-
-        for (final EntrypointContainer<ViaFabricPlusLoadEntrypoint> container : FabricLoader.getInstance().getEntrypointContainers(KEY, ViaFabricPlusLoadEntrypoint.class)) {
+        FabricLoader.getInstance().getEntrypointContainers("viafabricplus", ViaFabricPlusLoadEntrypoint.class).forEach(container -> {
             container.getEntrypoint().onPlatformLoad(INSTANCE);
+        });
+
+        // Create the directory if it doesn't exist
+        if (!Files.exists(path)) {
+            try {
+                Files.createDirectory(path);
+            } catch (IOException e) {
+                logger.error("Failed to create ViaFabricPlus directory", e);
+            }
         }
 
-        try {
-            Files.createDirectories(path);
-        } catch (final IOException e) {
-            logger.error("Failed to create ViaFabricPlus directory", e);
-        }
-
+        // Load overriding jars first so other code can access the new classes
         ClassLoaderPriorityUtil.loadOverridingJars(path, logger);
+
+        // Load settings and config files
         SettingsManager.INSTANCE.init();
         SaveManager.INSTANCE.init();
+
+        // Init features
         SyncTasks.init();
         FeaturesLoading.init();
 
-        this.loadingFuture = ProtocolTranslator.init(path);
-        LOADING_CYCLE.register(cycle -> {
-            if (cycle == LoadingCycleCallback.LoadingCycle.POST_GAME_LOAD) {
-                this.loadingFuture.join();
-                FeaturesLoading.postInit();
-                SaveManager.INSTANCE.postInit();
+        // Init ViaVersion protocol translator platform
+        loadingFuture = ProtocolTranslator.init(path);
+
+        registerLoadingCycleCallback(cycle -> {
+            if (cycle != LoadingCycleCallback.LoadingCycle.POST_GAME_LOAD) {
+                return;
             }
+            loadingFuture.join();
+            SaveManager.INSTANCE.postInit();
         });
-        LOADING_CYCLE.invoker().onLoadCycle(LoadingCycleCallback.LoadingCycle.FINAL_LOAD);
+        Events.LOADING_CYCLE.invoker().onLoadCycle(LoadingCycleCallback.LoadingCycle.FINAL_LOAD);
     }
 
     // --------------------------------------------------------------------------------------------
@@ -133,17 +122,17 @@ public final class ViaFabricPlusImpl implements ViaFabricPlusBase {
 
     @Override
     public String getVersion() {
-        return this.version;
+        return version;
     }
 
     @Override
     public String getImplVersion() {
-        return this.implVersion;
+        return implVersion;
     }
 
     @Override
-    public Path getPath() {
-        return this.path;
+    public Path rootPath() {
+        return path;
     }
 
     @Override
@@ -152,18 +141,18 @@ public final class ViaFabricPlusImpl implements ViaFabricPlusBase {
     }
 
     @Override
-    public void setTargetVersion(ProtocolVersion newVersion) {
-        ProtocolTranslator.setTargetVersion(newVersion);
-    }
-
-    @Override
     public @Nullable ProtocolVersion getTargetVersion(Channel channel) {
         return ProtocolTranslator.getTargetVersion(channel);
     }
 
     @Override
-    public @Nullable ProtocolVersion getTargetVersion(Connection connection) {
-        return ((IConnection) connection).viaFabricPlus$getTargetVersion();
+    public @Nullable ProtocolVersion getTargetVersion(ClientConnection connection) {
+        return ((IClientConnection) connection).viaFabricPlus$getTargetVersion();
+    }
+
+    @Override
+    public void setTargetVersion(ProtocolVersion newVersion) {
+        ProtocolTranslator.setTargetVersion(newVersion);
     }
 
     @Override
@@ -177,23 +166,23 @@ public final class ViaFabricPlusImpl implements ViaFabricPlusBase {
     }
 
     @Override
-    public @Nullable UserConnection getUserConnection(Connection connection) {
-        return ((IConnection) connection).viaFabricPlus$getUserConnection();
+    public @Nullable UserConnection getUserConnection(ClientConnection connection) {
+        return ((IClientConnection) connection).viaFabricPlus$getUserConnection();
     }
 
     @Override
-    public @Nullable ProtocolVersion getServerVersion(ServerData serverInfo) {
-        return ((IServerData) serverInfo).viaFabricPlus$forcedVersion();
+    public @Nullable ProtocolVersion getServerVersion(ServerInfo serverInfo) {
+        return ((IServerInfo) serverInfo).viaFabricPlus$forcedVersion();
     }
 
     @Override
     public void registerOnChangeProtocolVersionCallback(ChangeProtocolVersionCallback callback) {
-        CHANGE_PROTOCOL_VERSION.register(callback);
+        Events.CHANGE_PROTOCOL_VERSION.register(callback);
     }
 
     @Override
     public void registerLoadingCycleCallback(LoadingCycleCallback callback) {
-        LOADING_CYCLE.register(callback);
+        Events.LOADING_CYCLE.register(callback);
     }
 
     @Override
@@ -202,8 +191,8 @@ public final class ViaFabricPlusImpl implements ViaFabricPlusBase {
     }
 
     @Override
-    public List<SettingGroup> getSettingGroups() {
-        return Collections.unmodifiableList(SettingsManager.INSTANCE.getGroups());
+    public List<SettingGroup> settingGroups() {
+        return SettingsManager.INSTANCE.getGroups();
     }
 
     @Override
@@ -213,7 +202,7 @@ public final class ViaFabricPlusImpl implements ViaFabricPlusBase {
 
     @Override
     public @Nullable SettingGroup getSettingGroup(String translationKey) {
-        for (final SettingGroup group : SettingsManager.INSTANCE.getGroups()) {
+        for (SettingGroup group : SettingsManager.INSTANCE.getGroups()) {
             if (ChatUtil.uncoverTranslationKey(group.getName()).equals(translationKey)) {
                 return group;
             }
@@ -242,33 +231,13 @@ public final class ViaFabricPlusImpl implements ViaFabricPlusBase {
     }
 
     @Override
-    public boolean itemExists(net.minecraft.world.item.Item item, ProtocolVersion version) {
-        return VersionedRegistries.containsItem(item, version);
+    public boolean itemExists(net.minecraft.item.Item item, ProtocolVersion version) {
+        return ItemRegistryDiff.contains(item, version);
     }
 
     @Override
-    public boolean enchantmentExists(ResourceKey<Enchantment> enchantment, ProtocolVersion version) {
-        return VersionedRegistries.containsEnchantment(enchantment, version);
-    }
-
-    @Override
-    public boolean effectExists(Holder<MobEffect> effect, ProtocolVersion version) {
-        return VersionedRegistries.containsEffect(effect, version);
-    }
-
-    @Override
-    public boolean bannerPatternExists(ResourceKey<BannerPattern> pattern, ProtocolVersion version) {
-        return VersionedRegistries.containsBannerPattern(pattern, version);
-    }
-
-    @Override
-    public boolean itemExistsInConnection(net.minecraft.world.item.Item item) {
-        return VersionedRegistries.keepItem(item);
-    }
-
-    @Override
-    public boolean itemExistsInConnection(ItemStack stack) {
-        return VersionedRegistries.keepItem(stack);
+    public boolean itemExistsInConnection(net.minecraft.item.Item item) {
+        return ItemRegistryDiff.keepItem(item);
     }
 
     @Override
@@ -276,8 +245,8 @@ public final class ViaFabricPlusImpl implements ViaFabricPlusBase {
         return NegativeItemUtil.getCount(stack);
     }
 
-    public Logger getLogger() {
-        return this.logger;
+    public Logger logger() {
+        return logger;
     }
 
 }

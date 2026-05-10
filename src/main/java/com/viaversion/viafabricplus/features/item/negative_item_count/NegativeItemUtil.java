@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,10 +23,12 @@ package com.viaversion.viafabricplus.features.item.negative_item_count;
 
 import com.viaversion.viafabricplus.util.ItemUtil;
 import com.viaversion.viaversion.protocols.v1_10to1_11.Protocol1_10To1_11;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NbtCompound;
 
 public final class NegativeItemUtil {
+
+    private static final String VV_IDENTIFIER = "VV|" + Protocol1_10To1_11.class.getSimpleName(); // ItemRewriter#nbtTagName
 
     /**
      * Returns the actual amount of items in the stack, versions older or equal to 1.10 can have negative stack sizes
@@ -36,9 +38,9 @@ public final class NegativeItemUtil {
      * @return The actual amount of items in the stack
      */
     public static int getCount(final ItemStack stack) {
-        final CompoundTag tag = ItemUtil.getTagOrNull(stack);
-        if (tag != null) {
-            return tag.getIntOr(ItemUtil.vvNbtName(Protocol1_10To1_11.class), stack.getCount());
+        final NbtCompound tag = ItemUtil.getTagOrNull(stack);
+        if (tag != null && tag.contains(VV_IDENTIFIER)) {
+            return tag.getInt(VV_IDENTIFIER);
         } else {
             return stack.getCount();
         }

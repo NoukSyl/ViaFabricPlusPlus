@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,15 +23,15 @@ package com.viaversion.viafabricplus.injection.mixin.features.block.shape;
 
 import com.viaversion.viafabricplus.protocoltranslator.ProtocolTranslator;
 import com.viaversion.viaversion.api.protocol.version.ProtocolVersion;
-import net.minecraft.client.Minecraft;
-import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.FarmlandBlock;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.Shapes;
-import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.FarmlandBlock;
+import net.minecraft.block.ShapeContext;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.shape.VoxelShape;
+import net.minecraft.util.shape.VoxelShapes;
+import net.minecraft.world.BlockView;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -44,15 +44,15 @@ public abstract class MixinFarmlandBlock extends Block {
 
     @Shadow
     @Final
-    private static VoxelShape SHAPE;
+    protected static VoxelShape SHAPE;
 
-    public MixinFarmlandBlock(Properties settings) {
+    public MixinFarmlandBlock(Settings settings) {
         super(settings);
     }
 
-    @Inject(method = "getShape", at = @At("HEAD"), cancellable = true)
-    private void changeOutlineShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context, CallbackInfoReturnable<VoxelShape> cir) {
-        if (Minecraft.getInstance() != null && Minecraft.getInstance().isLocalServer()) {
+    @Inject(method = "getOutlineShape", at = @At("HEAD"), cancellable = true)
+    private void changeOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context, CallbackInfoReturnable<VoxelShape> cir) {
+        if (MinecraftClient.getInstance() != null && MinecraftClient.getInstance().isInSingleplayer()) {
             // When joining the singleplayer, we set the target version to the native version when the integrated server is started
             // However this is already to late for blocks since the world and entities have already been loaded, causing block collisions
             // to make issues as described via https://github.com/ViaVersion/ViaFabricPlus/issues/436. A proper fix would be to
@@ -61,21 +61,21 @@ public abstract class MixinFarmlandBlock extends Block {
         }
 
         if (ProtocolTranslator.getTargetVersion().olderThanOrEqualTo(ProtocolVersion.v1_9_3)) {
-            cir.setReturnValue(Shapes.block());
+            cir.setReturnValue(VoxelShapes.fullCube());
         }
     }
 
     @Override
-    public VoxelShape getOcclusionShape(BlockState state) {
-        if (Minecraft.getInstance() != null && Minecraft.getInstance().isLocalServer()) {
+    public VoxelShape getCullingShape(BlockState state) {
+        if (MinecraftClient.getInstance() != null && MinecraftClient.getInstance().isInSingleplayer()) {
             // See above for explanation
-            return super.getOcclusionShape(state);
+            return super.getCullingShape(state);
         }
 
         if (ProtocolTranslator.getTargetVersion().olderThanOrEqualTo(ProtocolVersion.v1_9_3)) {
             return SHAPE;
         } else {
-            return super.getOcclusionShape(state);
+            return super.getCullingShape(state);
         }
     }
 

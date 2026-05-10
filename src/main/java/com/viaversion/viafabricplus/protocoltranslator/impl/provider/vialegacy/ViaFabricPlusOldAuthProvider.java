@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,8 +26,8 @@ import com.viaversion.viafabricplus.protocoltranslator.ProtocolTranslator;
 import com.viaversion.viafabricplus.settings.impl.AuthenticationSettings;
 import com.viaversion.viafabricplus.util.ChatUtil;
 import com.viaversion.viaversion.api.connection.UserConnection;
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.text.Text;
 import net.raphimc.vialegacy.protocol.release.r1_2_4_5tor1_3_1_2.provider.OldAuthProvider;
 
 public final class ViaFabricPlusOldAuthProvider extends OldAuthProvider {
@@ -39,11 +39,11 @@ public final class ViaFabricPlusOldAuthProvider extends OldAuthProvider {
         }
 
         try {
-            final Minecraft client = Minecraft.getInstance();
-            client.services().sessionService().joinServer(client.getUser().getProfileId(), client.getUser().getAccessToken(), serverId);
+            final MinecraftClient client = MinecraftClient.getInstance();
+            client.getSessionService().joinServer(client.getSession().getUuidOrNull(), client.getSession().getAccessToken(), serverId);
         } catch (Exception e) {
-            connection.getChannel().attr(ProtocolTranslator.CLIENT_CONNECTION_ATTRIBUTE_KEY).get().disconnect(ChatUtil.prefixText(Component.translatable("betacraft.viafabricplus.failed_to_verify_session")));
-            ViaFabricPlusImpl.INSTANCE.getLogger().error("Error occurred while calling join server to verify session", e);
+            connection.getChannel().attr(ProtocolTranslator.CLIENT_CONNECTION_ATTRIBUTE_KEY).get().disconnect(ChatUtil.prefixText(Text.translatable("betacraft.viafabricplus.failed_to_verify_session")));
+            ViaFabricPlusImpl.INSTANCE.logger().error("Error occurred while calling join server to verify session", e);
         }
     }
 

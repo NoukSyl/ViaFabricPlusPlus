@@ -11,9 +11,7 @@
             "minecraft:bookshelf",
             "minecraft:chest",
             "minecraft:oak_planks",
-            "minecraft:oak_log",
-            "minecraft:birch_log",
-            "minecraft:spruce_log"
+            "minecraft:oak_log"
           ],
           "speed": 2.0
         }
@@ -30,9 +28,7 @@
             "minecraft:bookshelf",
             "minecraft:chest",
             "minecraft:oak_planks",
-            "minecraft:oak_log",
-            "minecraft:birch_log",
-            "minecraft:spruce_log"
+            "minecraft:oak_log"
           ],
           "speed": 4.0
         }
@@ -49,9 +45,7 @@
             "minecraft:bookshelf",
             "minecraft:chest",
             "minecraft:oak_planks",
-            "minecraft:oak_log",
-            "minecraft:birch_log",
-            "minecraft:spruce_log"
+            "minecraft:oak_log"
           ],
           "speed": 6.0
         }
@@ -68,9 +62,7 @@
             "minecraft:bookshelf",
             "minecraft:chest",
             "minecraft:oak_planks",
-            "minecraft:oak_log",
-            "minecraft:birch_log",
-            "minecraft:spruce_log"
+            "minecraft:oak_log"
           ],
           "speed": 12.0
         }
@@ -87,9 +79,7 @@
             "minecraft:bookshelf",
             "minecraft:chest",
             "minecraft:oak_planks",
-            "minecraft:oak_log",
-            "minecraft:birch_log",
-            "minecraft:spruce_log"
+            "minecraft:oak_log"
           ],
           "speed": 8.0
         }

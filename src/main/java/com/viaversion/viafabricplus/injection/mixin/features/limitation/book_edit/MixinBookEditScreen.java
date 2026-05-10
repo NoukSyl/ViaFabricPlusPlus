@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ package com.viaversion.viafabricplus.injection.mixin.features.limitation.book_ed
 
 import com.viaversion.viafabricplus.protocoltranslator.ProtocolTranslator;
 import com.viaversion.viaversion.api.protocol.version.ProtocolVersion;
-import net.minecraft.client.gui.screens.inventory.BookEditScreen;
+import net.minecraft.client.gui.screen.ingame.BookEditScreen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
@@ -31,7 +31,7 @@ import org.spongepowered.asm.mixin.injection.ModifyConstant;
 @Mixin(BookEditScreen.class)
 public abstract class MixinBookEditScreen {
 
-    @ModifyConstant(method = "init", constant = @Constant(intValue = 1024))
+    @ModifyConstant(method = "method_27596", constant = @Constant(intValue = 1024))
     private int modifyPageLength(int constant) {
         if (ProtocolTranslator.getTargetVersion().olderThanOrEqualTo(ProtocolVersion.v1_13_2)) {
             return 256;
@@ -40,7 +40,7 @@ public abstract class MixinBookEditScreen {
         }
     }
 
-    @ModifyConstant(method = "appendPageToBook", constant = @Constant(intValue = 100))
+    @ModifyConstant(method = "appendNewPage", constant = @Constant(intValue = 100))
     private int modifyPageCount(int constant) {
         if (ProtocolTranslator.getTargetVersion().olderThanOrEqualTo(ProtocolVersion.v1_13_2)) {
             return 50;

@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,13 +22,13 @@
 package com.viaversion.viafabricplus.injection.mixin.features.item.interaction;
 
 import com.viaversion.viafabricplus.protocoltranslator.ProtocolTranslator;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.BowItem;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.ItemUseAnimation;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.level.Level;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.BowItem;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.consume.UseAction;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
+import net.minecraft.world.World;
 import net.raphimc.vialegacy.api.LegacyProtocolVersion;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -38,29 +38,29 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(BowItem.class)
 public abstract class MixinBowItem {
 
-    @Inject(method = "getUseDuration", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "getMaxUseTime", at = @At("HEAD"), cancellable = true)
     private void makeInstantUsable_Time(CallbackInfoReturnable<Integer> cir) {
         if (ProtocolTranslator.getTargetVersion().olderThanOrEqualTo(LegacyProtocolVersion.b1_7tob1_7_3)) {
             cir.setReturnValue(0);
         }
     }
 
-    @Inject(method = "getUseAnimation", at = @At("HEAD"), cancellable = true)
-    private void makeInstantUsable_Action(CallbackInfoReturnable<ItemUseAnimation> cir) {
+    @Inject(method = "getUseAction", at = @At("HEAD"), cancellable = true)
+    private void makeInstantUsable_Action(CallbackInfoReturnable<UseAction> cir) {
         if (ProtocolTranslator.getTargetVersion().olderThanOrEqualTo(LegacyProtocolVersion.b1_7tob1_7_3)) {
-            cir.setReturnValue(ItemUseAnimation.NONE);
+            cir.setReturnValue(UseAction.NONE);
         }
     }
 
     @Inject(method = "use", at = @At("HEAD"), cancellable = true)
-    private void makeInstantUsable(Level world, Player user, InteractionHand hand, CallbackInfoReturnable<InteractionResult> cir) {
+    private void makeInstantUsable(World world, PlayerEntity user, Hand hand, CallbackInfoReturnable<ActionResult> cir) {
         if (ProtocolTranslator.getTargetVersion().olderThanOrEqualTo(LegacyProtocolVersion.b1_7tob1_7_3)) {
-            final ItemStack arrowStack = user.getProjectile(user.getItemInHand(hand));
+            final ItemStack arrowStack = user.getProjectileType(user.getStackInHand(hand));
             if (arrowStack.isEmpty()) {
-                cir.setReturnValue(InteractionResult.FAIL);
+                cir.setReturnValue(ActionResult.FAIL);
             } else {
-                arrowStack.shrink(1);
-                cir.setReturnValue(InteractionResult.PASS);
+                arrowStack.decrement(1);
+                cir.setReturnValue(ActionResult.PASS);
             }
         }
     }

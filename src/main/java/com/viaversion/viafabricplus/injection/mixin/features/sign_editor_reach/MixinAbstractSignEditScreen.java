@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,8 +23,8 @@ package com.viaversion.viafabricplus.injection.mixin.features.sign_editor_reach;
 
 import com.viaversion.viafabricplus.protocoltranslator.ProtocolTranslator;
 import com.viaversion.viaversion.api.protocol.version.ProtocolVersion;
-import net.minecraft.world.level.block.entity.SignBlockEntity;
-import net.minecraft.client.gui.screens.inventory.AbstractSignEditScreen;
+import net.minecraft.block.entity.SignBlockEntity;
+import net.minecraft.client.gui.screen.ingame.AbstractSignEditScreen;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -37,12 +37,12 @@ public abstract class MixinAbstractSignEditScreen {
 
     @Shadow
     @Final
-    protected SignBlockEntity sign;
+    protected SignBlockEntity blockEntity;
 
-    @Inject(method = "isValid", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "canEdit", at = @At("HEAD"), cancellable = true)
     private void dontCloseTooFarAwaySigns(CallbackInfoReturnable<Boolean> cir) {
         if (ProtocolTranslator.getTargetVersion().olderThanOrEqualTo(ProtocolVersion.v1_19_4)) {
-            cir.setReturnValue(this.sign.getType().isValid(this.sign.getBlockState()));
+            cir.setReturnValue(this.blockEntity.getType().supports(this.blockEntity.getCachedState()));
         }
     }
 

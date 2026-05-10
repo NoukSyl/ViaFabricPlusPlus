@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,42 +24,27 @@ package com.viaversion.viafabricplus.features.classic.cpe_extension;
 import com.viaversion.viafabricplus.protocoltranslator.ProtocolTranslator;
 import com.viaversion.viaversion.api.connection.UserConnection;
 import io.netty.buffer.ByteBuf;
+import net.lenni0451.reflect.Enums;
+import net.raphimc.vialegacy.api.LegacyProtocolVersion;
+import net.raphimc.vialegacy.protocol.classic.c0_30cpetoc0_28_30.data.ClassicProtocolExtension;
+import net.raphimc.vialegacy.protocol.classic.c0_30cpetoc0_28_30.packet.ClientboundPacketsc0_30cpe;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
-import net.lenni0451.reflect.Enums;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.Items;
-import net.raphimc.vialegacy.api.LegacyProtocolVersion;
-import net.raphimc.vialegacy.protocol.classic.c0_30cpetoc0_28_30.data.ClassicProtocolExtension;
-import net.raphimc.vialegacy.protocol.classic.c0_30cpetoc0_28_30.packet.ClientboundPacketsc0_30cpe;
 
 public final class CPEAdditions {
 
     public final static List<ClassicProtocolExtension> ALLOWED_EXTENSIONS = new ArrayList<>();
     public final static Map<Integer, ClientboundPacketsc0_30cpe> CUSTOM_PACKETS = new HashMap<>();
-    public static final List<Item> EXTENDED_CLASSIC_ITEMS = new ArrayList<>();
 
     public static ClientboundPacketsc0_30cpe EXT_WEATHER_TYPE;
 
     private static boolean snowing = false;
 
     public static void init() {
-        EXTENDED_CLASSIC_ITEMS.add(Items.COBBLESTONE_SLAB);
-        EXTENDED_CLASSIC_ITEMS.add(Items.DEAD_BUSH);
-        EXTENDED_CLASSIC_ITEMS.add(Items.SANDSTONE);
-        EXTENDED_CLASSIC_ITEMS.add(Items.SNOW);
-        EXTENDED_CLASSIC_ITEMS.add(Items.TORCH);
-        EXTENDED_CLASSIC_ITEMS.add(Items.BROWN_WOOL);
-        EXTENDED_CLASSIC_ITEMS.add(Items.ICE);
-        EXTENDED_CLASSIC_ITEMS.add(Items.CHISELED_QUARTZ_BLOCK);
-        EXTENDED_CLASSIC_ITEMS.add(Items.NETHER_QUARTZ_ORE);
-        EXTENDED_CLASSIC_ITEMS.add(Items.QUARTZ_PILLAR);
-        EXTENDED_CLASSIC_ITEMS.add(Items.JUKEBOX);
-        EXTENDED_CLASSIC_ITEMS.add(Items.STONE_BRICKS);
-
         allowExtension(ClassicProtocolExtension.ENV_WEATHER_TYPE);
         EXT_WEATHER_TYPE = createNewPacket(ClassicProtocolExtension.ENV_WEATHER_TYPE, 31, (user, buf) -> buf.readByte());
     }

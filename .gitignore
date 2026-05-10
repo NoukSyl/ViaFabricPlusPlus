@@ -4,7 +4,6 @@
 build/
 out/
 classes/
-.kotlin/
 
 # Eclipse
 
@@ -13,13 +12,11 @@ classes/
 # Idea
 
 .idea/
-!.idea/copyright/*
-!.idea/scopes/*
 *.iml
 *.ipr
 *.iws
 
-# VSCode
+# VScode
 
 .settings/
 .vscode/
@@ -29,8 +26,13 @@ bin/
 
 # macOS
 
-DS_Store
+.DS_Store
+.AppleDouble
+.LSOverride
 
-# Misc
+# Fabric
 
 run/
+runV2/
+*.cap
+*.rdc

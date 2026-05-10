@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,9 +23,9 @@ package com.viaversion.viafabricplus.injection.mixin.features.item.interaction;
 
 import com.viaversion.viafabricplus.protocoltranslator.ProtocolTranslator;
 import com.viaversion.viaversion.api.protocol.version.ProtocolVersion;
-import net.minecraft.world.item.AxeItem;
-import net.minecraft.world.item.context.UseOnContext;
-import net.minecraft.world.InteractionResult;
+import net.minecraft.item.AxeItem;
+import net.minecraft.item.ItemUsageContext;
+import net.minecraft.util.ActionResult;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -37,19 +37,23 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class MixinAxeItem {
 
     @Shadow
-    private static boolean playerHasBlockingItemUseIntent(UseOnContext context) {
+    private static boolean shouldCancelStripAttempt(ItemUsageContext context) {
         return false;
     }
 
-    @Redirect(method = "useOn", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/AxeItem;playerHasBlockingItemUseIntent(Lnet/minecraft/world/item/context/UseOnContext;)Z"))
-    private boolean neverCancelStripAttempt(UseOnContext context) {
-        return ProtocolTranslator.getTargetVersion().newerThan(ProtocolVersion.v1_20_5) && playerHasBlockingItemUseIntent(context);
+    @Redirect(method = "useOnBlock", at = @At(value = "INVOKE", target = "Lnet/minecraft/item/AxeItem;shouldCancelStripAttempt(Lnet/minecraft/item/ItemUsageContext;)Z"))
+    private boolean neverCancelStripAttempt(ItemUsageContext context) {
+        if (ProtocolTranslator.getTargetVersion().olderThanOrEqualTo(ProtocolVersion.v1_20_5)) {
+            return false;
+        } else {
+            return shouldCancelStripAttempt(context);
+        }
     }
 
-    @Inject(method = "useOn", at = @At("HEAD"), cancellable = true)
-    private void disableUse(UseOnContext context, CallbackInfoReturnable<InteractionResult> cir) {
+    @Inject(method = "useOnBlock", at = @At("HEAD"), cancellable = true)
+    private void disableUse(ItemUsageContext context, CallbackInfoReturnable<ActionResult> cir) {
         if (ProtocolTranslator.getTargetVersion().olderThanOrEqualTo(ProtocolVersion.v1_12_2)) {
-            cir.setReturnValue(InteractionResult.PASS);
+            cir.setReturnValue(ActionResult.PASS);
         }
     }
 

@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,8 +23,8 @@ package com.viaversion.viafabricplus.injection.mixin.features.networking.srv_res
 
 import com.viaversion.viafabricplus.protocoltranslator.ProtocolTranslator;
 import com.viaversion.viaversion.api.protocol.version.ProtocolVersion;
-import net.minecraft.client.multiplayer.resolver.ServerNameResolver;
-import net.minecraft.client.multiplayer.resolver.ServerAddress;
+import net.minecraft.client.network.AllowedAddressResolver;
+import net.minecraft.client.network.ServerAddress;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -39,10 +39,10 @@ public abstract class MixinServerAddress {
     @Final
     private static ServerAddress INVALID;
 
-    @Inject(method = "parseString", at = @At("RETURN"), cancellable = true)
+    @Inject(method = "parse", at = @At("RETURN"), cancellable = true)
     private static void resolveSrv(String address, CallbackInfoReturnable<ServerAddress> cir) {
         if (!cir.getReturnValue().equals(INVALID) && ProtocolTranslator.getTargetVersion().olderThanOrEqualTo(ProtocolVersion.v1_16_4)) {
-            cir.setReturnValue(ServerNameResolver.DEFAULT.redirectHandler.lookupRedirect(cir.getReturnValue()).orElse(cir.getReturnValue()));
+            cir.setReturnValue(AllowedAddressResolver.DEFAULT.redirectResolver.lookupRedirect(cir.getReturnValue()).orElse(cir.getReturnValue()));
         }
     }
 

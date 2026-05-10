@@ -1,196 +1,131 @@
-# Updating Instructions
+# Updating instructions for the project
+
+These steps are the usual process for updating ViaFabricPlus to a new version of the game. If you're unsure about
+something, ask in the ViaVersion discord.
+
+1. Update all upstream versions in `gradle.properties`. The main versions you need to update are:
+    - `minecraft_version`
+    - `yarn_version`
+    - `loader_version`
+    - `fabric_api_version`
+
+    - `supported_versions` (if necessary)
+
+   As well as the versions in the `dependencies` block in the `build.gradle` file.
+   Set `updating_minecraft` to `true` (Required for automatic data dumping).
+2. Increment the version number in `gradle.properties` by at least a minor version (e.g. 1.0.0 -> 1.1.0)
+3. Check all data dumps and diffs in the fixes/data package and update them if necessary, here is a list of some
+   critical ones:
+    - `ResourcePackHeaderDiff` (add the new version at the top of the list)
+    - `ItemRegistryDiff` (add all new items/blocks added in the new version)
+    - `EntityDimensionDiff` (add entity dimension changes)
+   For this process you can also run `gradle test` which will automatically dump changes of diff classes.
+4. Update the `NATIVE_VERSION` field in the ProtocolTranslator class to the new version
+5. Update protocol constants in the `ViaFabricPlusProtocol` class
+6. Update `ItemTranslator#getClientboundItemType` if a new item type exists
+-------------
+
+7. Check all mixins in the injection package if they still apply correctly, here is a list of some critical ones:
+    - `MixinClientWorld#tickEntity` and `MixinClientWorld#tickPassenger`
+    - `MixinPlayer#getBlockBreakingSpeed`
+8. Decompile the game source code with the tool of your choice.
+9. Try to compile the mod and start porting the code until all existing fixes are working again.
+10. Diff the game code with the code of the previous version (e.g. using git) and implement all changes that could be
+   relevant for ViaFabricPlus, those are:
+    - General logic changes (e.g. `if (a && b)` -> `if (b || a)`)
+    - Changes to the movement code (e.g. `player.yaw` -> `player.headYaw`)
+    - Networking changes (e.g. sending a new packet / changing the packet structure)
+    - Changes to visuals (e.g. animation changes)
+    - Note: ViaVersion already implements most gameplay related changes for us, but you should always check for
+      edge-cases. Since ViaVersion
+      is primarily a server side plugin, it does not take care of client-side related / deeper changes. ViaFabricPlus
+      often has to inject into
+      ViaVersion code to improve funcitonality for the client.
+
+   **Read more about which fixes should be
+   added [HERE](../CONTRIBUTING.md#adding-protocol-new-fixes---which-are-important-and-which-arent)**
+
+    - From experience, the following packages contain the usual important changes (mojang mappings):
+        - `net.minecraft`
+        - `net.minecraft.client`
+            - `net.minecraft.client.gui`
+            - `net.minecraft.client.multiplayer`
+            - `net.minecraft.client.player`
+        - `net.minecraft.util`
+        - `net.minecraft.world`
+            - `net.minecraft.world.entity`
+            - `net.minecraft.world.inventory`
+            - `net.minecraft.world.item`
+            - `net.minecraft.world.level`
+                - `net.minecraft.world.level.block`
+
+    - While the following packages (mojang mappings) can be skipped completely (most of the time):
+        - `com.mojang`
+        - `net.minecraft.advancements`
+        - `net.minecraft.commands`
+        - `net.minecraft.data`
+        - `net.minecraft.gametest`
+        - `net.minecraft.realms`
+        - `net.minecraft.recipebook`
+        - `net.minecraft.references`
+        - `net.minecraft.resources`
+        - `net.minecraft.server`
+        - `net.minecraft.sounds`
+        - `net.minecraft.stats`
+        - `net.minecraft.tags`
+
+11. Check the ViaVersion/upstream protocol implementation for issues and report them if necessary or if these issues
+    can't be fixed,
+    without tons of work, implement a workaround in ViaFabricPlus.
+12. Run the game and check all GUIs and other visuals for issues.
+13. Clean your code and make sure it is readable and understandable, clientside fixes are sorted by their protocol
+    versions, having
+    newer fixes at the top of the file.
+    Set `updating_minecraft` to `false`.
+
+-------------
+
+14. Create a pull request and wait for it to be reviewed and merged.
+15. You're done, congrats!
+
+## Git branches
+
+- `main`: The main branch, this is where all changes are merged into
+- `dev`: Used for changes which needs reviewing by all developers, usually merged into `main` shortly after
+- `update/*`: Update branches, these are used to port ViaFabricPlus to newer versions of the game
+- `<version>`: Final release branches sorted by their Minecraft version (e.g. `1.8.9`, `1.16.5`, `1.17.1`, ...)
+
+There are also older formats which aren't used anymore:
+
+- `recode/*`: Recode branches, these are used to port ViaFabricPlus to newer versions of the game or rewrite big parts
+  of the code
+- `backport/*`: Backport branches, these are used to backport newer ViaFabricPlus versions to older versions of the game
 
-These are the usual steps for updating **ViaFabricPlus** to a new Minecraft version.
-If you're unsure about anything, feel free to ask in the [ViaVersion Discord](https://discord.gg/viaversion).
+## Project structure
 
----
+Every change made to the game is called a `feature`. Each feature has its package under both `features/` and
+`injection/mixin/features/`, organizing utility and mixin classes for easier project maintenance and porting
+Loading of features is done via `static` blocks and dummy `init` function called in the `FeaturesLoading` class.
 
-## 1. Update Dependencies
+## Release process
+1. Set `maven_version` in `gradle.properties` to the next release version.
+2. Pin version ids of `vvDependencies` in `build-logic/src/main/groovy/vfp.base-conventions.gradle`
+3. Commit `<version> Release`
 
-Update all upstream versions in `gradle.properties`. The main ones are:
+Usually you should go back to a -SNAPSHOT `maven_version` and unpin `vvDependencies` again in your next commit. If the next commit
+would be a merged pull request of someone else, you can do a commit with this format before merging the PR:
+`Bump version to <version>`
 
-- `minecraft_version`
-- `fabric_loader_version`
-- `fabric_api_version`
-- `supported_minecraft_versions` (if needed)
+## Versioning
 
-Also update versions in the `dependencies` block of `build.gradle.kts`.
+The versioning should only be updated every release and should only have one update between each release.
 
----
+The versioning scheme is `major.minor.patch`, where:
+- `Major` versions are only incremented with breaking and fundamental changes to the existing codebase, such as
+  migrating mappings or refactoring the entire codebase.
 
-## 2. Update Core References
+- `Minor` versions are incremented when the mod gets ported to a new version of the game or when huge features are
+  added / upstream changes are implemented.
 
-- Update the `NATIVE_VERSION` field in `ProtocolTranslator`
-- Update protocol constants in `ViaFabricPlusProtocol` and `getClientboundItemType` if a new item type was added
-- If this starts a new active branch, replace `ver/<old-version>` with `ver/<new-version>` in:
-  - GitHub repository settings (default branch, branch protection/rulesets)
-  - `.github/workflows/sync-crowdin.yml`
-  - `.github/workflows/build.yml` (if branch filters are added later)
-  - `CONTRIBUTING.md`
-  - `README.md`
-  - `docs/DEVELOPER_API.md`
-  - `.github/ISSUE_TEMPLATE/config.yml`
-
----
-
-## 3. Port the Code
-
-1. Decompile the Minecraft source with your preferred tool.
-2. Try to compile the mod and port the code until all fixes work again.
-
----
-
-## 4. Update Data Diffs
-
-Set `updating_minecraft = true`.
-
-Run `gradle test` to automatically update various data jsons in the assets.
-
-Manually check the following files:
-- `entity-dimensions.json`
-
-Set `updating_minecraft = false`.
-
----
-
-## 5. Validate Mixins
-
-Check if all mixins in the `injection` package still apply correctly.
-Critical ones include:
-
-- `MixinClientLevel#tickEntity`
-- `MixinClientLevel#tickPassenger`
-- `MixinPlayer#changeSpeedCalculation`
-
----
-
-## 6. Diff Game Code
-
-Diff the new Minecraft source against the previous version (e.g. using `git`).
-Implement all relevant changes for ViaFabricPlus. These usually include:
-
-- **Logic changes** (e.g. `if (a && b)` → `if (b || a)`)
-- **Movement changes** (e.g. `player.yaw` → `player.headYaw`)
-- **Networking changes** (e.g. new packet or changed structure)
-- **Visual changes** (e.g. animations)
-
-Note: ViaVersion already covers most server-side gameplay changes.
-ViaFabricPlus usually handles **client-side and deeper integration fixes**.
-
-See [Contributing Guidelines](../CONTRIBUTING.md#Adding-Protocol-Fixes) for details on which fixes matter.
-
----
-
-## 7. Focus Areas in Game Code
-
-**Usually important (mojang mappings):**
-
-- `net.minecraft`
-- `net.minecraft.client`
-    - `gui`
-    - `multiplayer`
-    - `player`
-- `net.minecraft.util`
-- `net.minecraft.world`
-    - `entity`
-    - `inventory`
-    - `item`
-    - `level` (including `block`)
-
-**Usually safe to skip:**
-
-- `com.mojang`
-- `net.minecraft.advancements`
-- `net.minecraft.commands`
-- `net.minecraft.data`
-- `net.minecraft.gametest`
-- `net.minecraft.realms`
-- `net.minecraft.recipebook`
-- `net.minecraft.references`
-- `net.minecraft.resources`
-- `net.minecraft.server`
-- `net.minecraft.sounds`
-- `net.minecraft.stats`
-- `net.minecraft.tags`
-
----
-
-## 8. Verify Upstream
-
-Check the ViaVersion/upstream protocol implementation.
-
-- Report upstream issues when needed
-- If an issue can't be fixed upstream without excessive work, add a client-side workaround in ViaFabricPlus
-
----
-
-## 9. Final Steps
-
-1. Run the game and verify **all GUIs and visuals**.
-2. Clean up your code and ensure it's readable.
-
-    * Client-side fixes are sorted by protocol version, newest at the top.
-3. Open a pull request and wait for review.
-
----
-
-# Project Structure
-
-- Every change to the game is called a **feature**.
-- Features live under both `features/` and `injection/mixin/features/`.
-- Loading is handled by static blocks and a dummy `init` function in `FeaturesLoading`.
-
----
-
-# Build Files
-
-- Common build logic comes from the [BaseProject Gradle convention plugin](https://github.com/florianreuth/BaseProject).
-- The root project includes all submodules (including optional ones like `viafabricplus-visuals`).
-- Be careful not to introduce unintended dependencies on optional submodules.
-
----
-
-# Release Process
-
-1. Set `project_version` in `gradle.properties` to the new release version.
-2. Pin version IDs of `configureVVDependencies` in `build.gradle.kts`.
-3. Commit with message:
-
-   ```
-   ViaFabricPlus <version>
-   ```
-
-## Versioning Scheme
-
-- **Major** → Breaking or fundamental refactors (e.g. new mappings, full rewrite)
-- **Minor** → Port to a new game version or major feature addition
-- **Patch** → Bug fixes or small features
-
-After releasing:
-
-- Switch back to `-SNAPSHOT` version
-- Unpin `configureVVDependencies`
-
-Make a version bump commit:
-
-```
-Start <release version> cycle
-```
-
----
-
-# Git Branches
-
-- `ver/<version>` → all new changes are merged into the branch of the currently active Minecraft version
-- Keep one branch per Minecraft version (e.g. `ver/1.21.5`)
-
-
-See [ViaFabricPlus-archive](https://github.com/florianreuth/ViaFabricPlus-archive) for older branches.
-
----
-
-# Backports
-
-- Releases for older versions are **backports**.
-- Their version string should end with `-BACKPORT`.
-- Backports are pushed to the branch matching their Minecraft version.
+- `Patch` versions are incremented when bug fixes are made or small features are added, they are the usual version
+  increment.

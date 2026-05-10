@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,22 +21,20 @@
 
 package com.viaversion.viafabricplus.injection.mixin.features.block.shape;
 
-import com.viaversion.viafabricplus.features.block.interaction.Block1_14;
 import com.viaversion.viafabricplus.protocoltranslator.ProtocolTranslator;
 import com.viaversion.viaversion.api.protocol.version.ProtocolVersion;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import java.util.function.Function;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.level.block.WallBlock;
-import net.minecraft.world.level.block.state.properties.WallSide;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraft.world.phys.shapes.Shapes;
-import net.minecraft.world.level.BlockGetter;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.ShapeContext;
+import net.minecraft.block.WallBlock;
+import net.minecraft.block.enums.WallShape;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
+import net.minecraft.util.shape.VoxelShape;
+import net.minecraft.util.shape.VoxelShapes;
+import net.minecraft.world.BlockView;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -46,15 +44,17 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.Map;
+
 @Mixin(WallBlock.class)
 public abstract class MixinWallBlock extends Block {
 
-    @Unique
-    private final Object2IntMap<BlockState> viaFabricPlus$shapeIndexCache_r1_12_2 = new Object2IntOpenHashMap<>();
-
     @Shadow
     @Final
-    private Function<BlockState, VoxelShape> shapes;
+    private Map<BlockState, VoxelShape> shapeMap;
+
+    @Unique
+    private final Object2IntMap<BlockState> viaFabricPlus$shapeIndexCache_r1_12_2 = new Object2IntOpenHashMap<>();
 
     @Unique
     private VoxelShape[] viaFabricPlus$collision_shape_r1_12_2;
@@ -62,89 +62,50 @@ public abstract class MixinWallBlock extends Block {
     @Unique
     private VoxelShape[] viaFabricPlus$outline_shape_r1_12_2;
 
-    public MixinWallBlock(Properties settings) {
+    public MixinWallBlock(Settings settings) {
         super(settings);
     }
 
-    @Unique
-    private static BlockState viaFabricPlus$oldWallPlacementLogic(BlockState state) {
-        boolean addUp = false;
-        if (state.getValue(WallBlock.NORTH) == WallSide.TALL) {
-            state = state.setValue(WallBlock.NORTH, WallSide.LOW);
-            addUp = true;
-        }
-        if (state.getValue(WallBlock.EAST) == WallSide.TALL) {
-            state = state.setValue(WallBlock.EAST, WallSide.LOW);
-            addUp = true;
-        }
-        if (state.getValue(WallBlock.SOUTH) == WallSide.TALL) {
-            state = state.setValue(WallBlock.SOUTH, WallSide.LOW);
-            addUp = true;
-        }
-        if (state.getValue(WallBlock.WEST) == WallSide.TALL) {
-            state = state.setValue(WallBlock.WEST, WallSide.LOW);
-            addUp = true;
-        }
-        if (addUp) {
-            state = state.setValue(WallBlock.UP, true);
-        }
-        return state;
-    }
-
-    @Unique
-    private static int viaFabricPlus$getDirectionMask(Direction dir) {
-        return 1 << dir.get2DDataValue();
-    }
-
     @Inject(method = "<init>", at = @At("RETURN"))
-    private void initShapes1_12_2(Properties settings, CallbackInfo ci) {
+    private void initShapes1_12_2(Settings settings, CallbackInfo ci) {
         this.viaFabricPlus$collision_shape_r1_12_2 = this.viaFabricPlus$createShapes1_12_2(24.0F, 24.0F);
         this.viaFabricPlus$outline_shape_r1_12_2 = this.viaFabricPlus$createShapes1_12_2(16.0F, 14.0F);
     }
 
-    @Inject(method = "getStateForPlacement", at = @At("RETURN"), cancellable = true)
+    @Inject(method = "getPlacementState", at = @At("RETURN"), cancellable = true)
     private void modifyPlacementState(CallbackInfoReturnable<BlockState> cir) {
         if (ProtocolTranslator.getTargetVersion().olderThanOrEqualTo(ProtocolVersion.v1_15_2)) {
             cir.setReturnValue(viaFabricPlus$oldWallPlacementLogic(cir.getReturnValue()));
         }
     }
 
-    @Inject(method = "updateShape(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/LevelReader;Lnet/minecraft/world/level/ScheduledTickAccess;Lnet/minecraft/core/BlockPos;Lnet/minecraft/core/Direction;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/util/RandomSource;)Lnet/minecraft/world/level/block/state/BlockState;", at = @At("RETURN"), cancellable = true)
+    @Inject(method = "getStateForNeighborUpdate", at = @At("RETURN"), cancellable = true)
     private void modifyBlockState(CallbackInfoReturnable<BlockState> cir) {
         if (ProtocolTranslator.getTargetVersion().olderThanOrEqualTo(ProtocolVersion.v1_15_2)) {
             cir.setReturnValue(viaFabricPlus$oldWallPlacementLogic(cir.getReturnValue()));
         }
     }
 
-    @Inject(method = "connectsTo", at = @At("RETURN"), cancellable = true)
-    private void shouldConnectTo1_14(BlockState state, boolean neighborIsFullSquare, Direction dir, CallbackInfoReturnable<Boolean> cir) {
-        if (ProtocolTranslator.getTargetVersion().olderThanOrEqualTo(ProtocolVersion.v1_14)) {
-            if (!Block1_14.isExceptBlockForAttachWithPiston(state.getBlock())) {
-                cir.setReturnValue(false);
-            }
-        }
-    }
-
     @Inject(method = "getCollisionShape", at = @At("HEAD"), cancellable = true)
-    private void changeCollisionShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context, CallbackInfoReturnable<VoxelShape> cir) {
-        if (state.getValue(WallBlock.UP) && ProtocolTranslator.getTargetVersion().olderThanOrEqualTo(ProtocolVersion.v1_12_2)) {
+    private void changeCollisionShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context, CallbackInfoReturnable<VoxelShape> cir) {
+        if (state.get(WallBlock.UP) && ProtocolTranslator.getTargetVersion().olderThanOrEqualTo(ProtocolVersion.v1_12_2)) {
             cir.setReturnValue(this.viaFabricPlus$collision_shape_r1_12_2[this.viaFabricPlus$getShapeIndex(state)]);
         }
     }
 
-    @Inject(method = "getShape", at = @At("HEAD"), cancellable = true)
-    private void changeOutlineShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context, CallbackInfoReturnable<VoxelShape> cir) {
-        if (state.getValue(WallBlock.UP) && ProtocolTranslator.getTargetVersion().olderThanOrEqualTo(ProtocolVersion.v1_12_2)) {
+    @Inject(method = "getOutlineShape", at = @At("HEAD"), cancellable = true)
+    private void changeOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context, CallbackInfoReturnable<VoxelShape> cir) {
+        if (state.get(WallBlock.UP) && ProtocolTranslator.getTargetVersion().olderThanOrEqualTo(ProtocolVersion.v1_12_2)) {
             cir.setReturnValue(this.viaFabricPlus$outline_shape_r1_12_2[this.viaFabricPlus$getShapeIndex(state)]);
         }
     }
 
     @Override
-    public VoxelShape getOcclusionShape(BlockState state) {
-        if (state.getValue(WallBlock.UP) && ProtocolTranslator.getTargetVersion().olderThanOrEqualTo(ProtocolVersion.v1_12_2)) {
-            return this.shapes.apply(state);
+    public VoxelShape getCullingShape(BlockState state) {
+        if (state.get(WallBlock.UP) && ProtocolTranslator.getTargetVersion().olderThanOrEqualTo(ProtocolVersion.v1_12_2)) {
+            return this.shapeMap.get(state);
         } else {
-            return super.getOcclusionShape(state);
+            return super.getCullingShape(state);
         }
     }
 
@@ -155,54 +116,84 @@ public abstract class MixinWallBlock extends Block {
         final float h = 5.0F;
         final float i = 11.0F;
 
-        final VoxelShape baseShape = Block.box(f, 0.0D, f, g, height1, g);
-        final VoxelShape northShape = Block.box(h, 0.0, 0.0D, i, height2, i);
-        final VoxelShape southShape = Block.box(h, 0.0, h, i, height2, 16.0D);
-        final VoxelShape westShape = Block.box(0.0D, 0.0, h, i, height2, i);
-        final VoxelShape eastShape = Block.box(h, 0.0, h, 16.0D, height2, i);
+        final VoxelShape baseShape = Block.createCuboidShape(f, 0.0D, f, g, height1, g);
+        final VoxelShape northShape = Block.createCuboidShape(h, 0.0, 0.0D, i, height2, i);
+        final VoxelShape southShape = Block.createCuboidShape(h, 0.0, h, i, height2, 16.0D);
+        final VoxelShape westShape = Block.createCuboidShape(0.0D, 0.0, h, i, height2, i);
+        final VoxelShape eastShape = Block.createCuboidShape(h, 0.0, h, 16.0D, height2, i);
         final VoxelShape[] voxelShapes = new VoxelShape[]{
-            Shapes.empty(),
-            Block.box(f, 0.0, h, g, height1, 16.0D),
-            Block.box(0.0D, 0.0, f, i, height1, g),
-            Block.box(f - 4, 0.0, h - 1, g, height1, 16.0D),
-            Block.box(f, 0.0, 0.0D, g, height1, i),
-            Shapes.or(southShape, northShape),
-            Block.box(f - 4, 0.0, 0.0D, g, height1, i + 1),
-            Block.box(f - 4, 0.0, h - 5, g, height1, 16.0D),
-            Block.box(h, 0.0, f, 16.0D, height1, g),
-            Block.box(h - 1, 0.0, f, 16.0D, height1, g + 4),
-            Shapes.or(westShape, eastShape),
-            Block.box(h - 5, 0.0, f, 16.0D, height1, g + 4),
-            Block.box(f, 0.0, 0.0D, g + 4, height1, i + 1),
-            Block.box(f, 0.0, 0.0D, g + 4, height1, i + 5),
-            Block.box(h - 5, 0.0, f - 4, 16.0D, height1, g),
-            Block.box(0, 0.0, 0, 16.0D, height1, 16.0D)
+                VoxelShapes.empty(),
+                Block.createCuboidShape(f, 0.0, h, g, height1, 16.0D),
+                Block.createCuboidShape(0.0D, 0.0, f, i, height1, g),
+                Block.createCuboidShape(f - 4, 0.0, h - 1, g, height1, 16.0D),
+                Block.createCuboidShape(f, 0.0, 0.0D, g, height1, i),
+                VoxelShapes.union(southShape, northShape),
+                Block.createCuboidShape(f - 4, 0.0, 0.0D, g, height1, i + 1),
+                Block.createCuboidShape(f - 4, 0.0, h - 5, g, height1, 16.0D),
+                Block.createCuboidShape(h, 0.0, f, 16.0D, height1, g),
+                Block.createCuboidShape(h - 1, 0.0, f, 16.0D, height1, g + 4),
+                VoxelShapes.union(westShape, eastShape),
+                Block.createCuboidShape(h - 5, 0.0, f, 16.0D, height1, g + 4),
+                Block.createCuboidShape(f, 0.0, 0.0D, g + 4, height1, i + 1),
+                Block.createCuboidShape(f, 0.0, 0.0D, g + 4, height1, i + 5),
+                Block.createCuboidShape(h - 5, 0.0, f - 4, 16.0D, height1, g),
+                Block.createCuboidShape(0, 0.0, 0, 16.0D, height1, 16.0D)
         };
 
         for (int j = 0; j < 16; ++j) {
-            voxelShapes[j] = Shapes.or(baseShape, voxelShapes[j]);
+            voxelShapes[j] = VoxelShapes.union(baseShape, voxelShapes[j]);
         }
 
         return voxelShapes;
     }
 
     @Unique
+    private static BlockState viaFabricPlus$oldWallPlacementLogic(BlockState state) {
+        boolean addUp = false;
+        if (state.get(WallBlock.NORTH_SHAPE) == WallShape.TALL) {
+            state = state.with(WallBlock.NORTH_SHAPE, WallShape.LOW);
+            addUp = true;
+        }
+        if (state.get(WallBlock.EAST_SHAPE) == WallShape.TALL) {
+            state = state.with(WallBlock.EAST_SHAPE, WallShape.LOW);
+            addUp = true;
+        }
+        if (state.get(WallBlock.SOUTH_SHAPE) == WallShape.TALL) {
+            state = state.with(WallBlock.SOUTH_SHAPE, WallShape.LOW);
+            addUp = true;
+        }
+        if (state.get(WallBlock.WEST_SHAPE) == WallShape.TALL) {
+            state = state.with(WallBlock.WEST_SHAPE, WallShape.LOW);
+            addUp = true;
+        }
+        if (addUp) {
+            state = state.with(WallBlock.UP, true);
+        }
+        return state;
+    }
+
+    @Unique
+    private static int viaFabricPlus$getDirectionMask(Direction dir) {
+        return 1 << dir.getHorizontalQuarterTurns();
+    }
+
+    @Unique
     private int viaFabricPlus$getShapeIndex(BlockState state) {
         return this.viaFabricPlus$shapeIndexCache_r1_12_2.computeIntIfAbsent(state, statex -> {
             int i = 0;
-            if (!WallSide.NONE.equals(statex.getValue(WallBlock.NORTH))) {
+            if (!WallShape.NONE.equals(statex.get(WallBlock.NORTH_SHAPE))) {
                 i |= viaFabricPlus$getDirectionMask(Direction.NORTH);
             }
 
-            if (!WallSide.NONE.equals(statex.getValue(WallBlock.EAST))) {
+            if (!WallShape.NONE.equals(statex.get(WallBlock.EAST_SHAPE))) {
                 i |= viaFabricPlus$getDirectionMask(Direction.EAST);
             }
 
-            if (!WallSide.NONE.equals(statex.getValue(WallBlock.SOUTH))) {
+            if (!WallShape.NONE.equals(statex.get(WallBlock.SOUTH_SHAPE))) {
                 i |= viaFabricPlus$getDirectionMask(Direction.SOUTH);
             }
 
-            if (!WallSide.NONE.equals(statex.getValue(WallBlock.WEST))) {
+            if (!WallShape.NONE.equals(statex.get(WallBlock.WEST_SHAPE))) {
                 i |= viaFabricPlus$getDirectionMask(Direction.WEST);
             }
 

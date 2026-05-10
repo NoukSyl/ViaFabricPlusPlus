@@ -1,45 +1,44 @@
 name: Feature Request
-description: Suggest a feature for ViaFabricPlus
+description: Suggest a feature to be added in ViaFabricPlus
 labels: [ S-needs-triage, T-feature ]
 
 body:
   - type: markdown
     attributes:
       value: |
-        **Before requesting a new feature, please check whether the latest build from https://github.com/ViaVersion/ViaFabricPlus/actions already includes a solution.**
-
-        You can upload screenshots or videos in any text field when relevant.
+        **Before requesting a new feature, please see if using latest build from https://github.com/ViaVersion/ViaFabricPlus/actions already includes a solution.**
+        Whenever you see fit, you can upload images or videos to any of the text fields.
 
   - type: textarea
     attributes:
       label: Problem Description
       description: |
-        Describe the problem you are facing or explain why this feature would be useful.
+        Describe the issue you are facing or why you need the feature to be added.
       placeholder: |
-        I am always frustrated by...
+        I am always frustrated with...
     validations:
       required: true
 
   - type: textarea
     attributes:
-      label: Proposed Solution
+      label: Solution Description
       description: |
-        Describe the solution or feature you would like to see implemented.
+        Describe the solution you would like to see.
     validations:
       required: true
 
   - type: textarea
     attributes:
-      label: Alternatives Considered
+      label: Alternatives
       description: |
-        Describe any alternative solutions or workarounds you have considered.
+        Describe alternatives you have considered.
     validations:
       required: false
 
   - type: textarea
     attributes:
-      label: Additional Information
+      label: Additional Info
       description: |
-        Does this feature apply to a specific Minecraft version, mod loader, or environment?
+        Does the feature apply to any specific version or environment?
     validations:
       required: false

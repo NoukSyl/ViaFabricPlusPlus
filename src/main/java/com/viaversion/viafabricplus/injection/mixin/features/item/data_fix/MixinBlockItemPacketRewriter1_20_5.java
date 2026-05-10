@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,8 +21,8 @@
 
 package com.viaversion.viafabricplus.injection.mixin.features.item.data_fix;
 
-import com.viaversion.viafabricplus.ViaFabricPlusImpl;
 import com.viaversion.viafabricplus.api.events.LoadingCycleCallback;
+import com.viaversion.viafabricplus.base.Events;
 import com.viaversion.viafabricplus.protocoltranslator.impl.ViaFabricPlusMappingDataLoader;
 import com.viaversion.viaversion.api.connection.UserConnection;
 import com.viaversion.viaversion.api.minecraft.HolderSet;
@@ -43,19 +43,14 @@ import com.viaversion.viaversion.protocols.v1_20_3to1_20_5.Protocol1_20_3To1_20_
 import com.viaversion.viaversion.protocols.v1_20_3to1_20_5.packet.ServerboundPacket1_20_5;
 import com.viaversion.viaversion.protocols.v1_20_3to1_20_5.rewriter.BlockItemPacketRewriter1_20_5;
 import com.viaversion.viaversion.rewriter.ItemRewriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import net.raphimc.vialegacy.api.LegacyProtocolVersion;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import java.util.*;
 
 @Mixin(value = BlockItemPacketRewriter1_20_5.class, remap = false)
 public abstract class MixinBlockItemPacketRewriter1_20_5 extends ItemRewriter<ClientboundPacket1_20_3, ServerboundPacket1_20_5, Protocol1_20_3To1_20_5> {
@@ -75,7 +70,7 @@ public abstract class MixinBlockItemPacketRewriter1_20_5 extends ItemRewriter<Cl
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void loadItemMappings(Protocol1_20_3To1_20_5 protocol, CallbackInfo ci) {
-        // Technically, it would be cleaner to split mapping loading into their respective protocols, but that will be impossible
+        // Technically it would be cleaner to split mapping loading into there respective protocols, but that will be impossible
         // in a clean way, so let's just wait for Via* to load all protocols and then load everything in here.
         this.viaFabricPlus$foodItems_b1_7_3.add("minecraft:apple");
         this.viaFabricPlus$foodItems_b1_7_3.add("minecraft:mushroom_stew");
@@ -92,7 +87,7 @@ public abstract class MixinBlockItemPacketRewriter1_20_5 extends ItemRewriter<Cl
             this.viaFabricPlus$armorMaxDamage_b1_8_1.put(entry.getKey(), entry.getValue().getAsInt());
         }
 
-        ViaFabricPlusImpl.LOADING_CYCLE.register(cycle -> {
+        Events.LOADING_CYCLE.register(cycle -> {
             if (cycle != LoadingCycleCallback.LoadingCycle.POST_VIAVERSION_LOAD) {
                 return;
             }

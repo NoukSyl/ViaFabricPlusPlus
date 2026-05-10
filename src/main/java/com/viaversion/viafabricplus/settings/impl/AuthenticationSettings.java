@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,19 +23,19 @@ package com.viaversion.viafabricplus.settings.impl;
 
 import com.viaversion.viafabricplus.api.settings.SettingGroup;
 import com.viaversion.viafabricplus.api.settings.type.BooleanSetting;
-import net.minecraft.network.chat.Component;
+import net.minecraft.text.Text;
 
 public final class AuthenticationSettings extends SettingGroup {
 
     public static final AuthenticationSettings INSTANCE = new AuthenticationSettings();
 
-    public final BooleanSetting useBetaCraftAuthentication = new BooleanSetting(this, Component.translatable("authentication_settings.viafabricplus.use_beta_craft_authentication"), true);
-    public final BooleanSetting verifySessionForOnlineModeServers = new BooleanSetting(this, Component.translatable("authentication_settings.viafabricplus.verify_session_for_online_mode"), true);
-    public final BooleanSetting automaticallySelectCPEInClassiCubeServerList = new BooleanSetting(this, Component.translatable("authentication_settings.viafabricplus.automatically_select_cpe_when_using_classicube"), true);
-    public final BooleanSetting setSessionNameToClassiCubeNameInServerList = new BooleanSetting(this, Component.translatable("authentication_settings.viafabricplus.set_session_name_to_classicube_name"), true);
+    public final BooleanSetting useBetaCraftAuthentication = new BooleanSetting(this, Text.translatable("authentication_settings.viafabricplus.use_beta_craft_authentication"), true);
+    public final BooleanSetting verifySessionForOnlineModeServers = new BooleanSetting(this, Text.translatable("authentication_settings.viafabricplus.verify_session_for_online_mode"), true);
+    public final BooleanSetting automaticallySelectCPEInClassiCubeServerList = new BooleanSetting(this, Text.translatable("authentication_settings.viafabricplus.automatically_select_cpe_when_using_classicube"), true);
+    public final BooleanSetting setSessionNameToClassiCubeNameInServerList = new BooleanSetting(this, Text.translatable("authentication_settings.viafabricplus.set_session_name_to_classicube_name"), true);
 
     public AuthenticationSettings() {
-        super(Component.translatable("setting_group_name.viafabricplus.authentication"));
+        super(Text.translatable("setting_group_name.viafabricplus.authentication"));
     }
 
 }

@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,60 +23,59 @@ package com.viaversion.viafabricplus.injection.mixin.features.legacy_tab_complet
 
 import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 import com.viaversion.viafabricplus.settings.impl.DebugSettings;
-import net.minecraft.client.gui.components.CommandSuggestions;
-import net.minecraft.client.gui.screens.ChatScreen;
-import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screen.ChatInputSuggestor;
+import net.minecraft.client.gui.screen.ChatScreen;
+import net.minecraft.client.gui.widget.TextFieldWidget;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyArg;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(value = ChatScreen.class)
 public abstract class MixinChatScreen {
 
     @Shadow
-    protected EditBox input;
+    protected TextFieldWidget chatField;
 
     @Shadow
-    protected String initial;
+    private String originalChatText;
 
     @Shadow
-    CommandSuggestions commandSuggestions;
+    ChatInputSuggestor chatInputSuggestor;
 
-    @WrapWithCondition(method = "init", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/components/EditBox;setValue(Ljava/lang/String;)V"))
-    public boolean moveSetTextDown(EditBox instance, String text) {
+    @WrapWithCondition(method = "init", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/widget/TextFieldWidget;setText(Ljava/lang/String;)V"))
+    public boolean moveSetTextDown(TextFieldWidget instance, String text) {
         return !DebugSettings.INSTANCE.legacyTabCompletions.isEnabled();
     }
 
     @Inject(method = "init", at = @At("RETURN"))
     private void moveSetTextDown(CallbackInfo ci) {
         if (DebugSettings.INSTANCE.legacyTabCompletions.isEnabled()) {
-            this.input.setValue(this.initial);
-            this.commandSuggestions.updateCommandInfo();
+            this.chatField.setText(this.originalChatText);
+            this.chatInputSuggestor.refresh();
         }
     }
 
-    @ModifyArg(method = "onEdited", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/components/CommandSuggestions;setAllowSuggestions(Z)V"), index = 0)
-    private boolean fixCommandKey(boolean windowActive) {
-        final String instance = this.input.getValue();
+    @Redirect(method = "onChatFieldUpdate", at = @At(value = "INVOKE", target = "Ljava/lang/String;equals(Ljava/lang/Object;)Z"))
+    private boolean fixCommandKey(String instance, Object other) {
         if (this.viaFabricPlus$keepTabComplete()) {
-            return true;
+            return instance.equals(other);
         } else {
-            return !instance.isEmpty();
+            return instance.isEmpty();
         }
     }
 
-    @WrapWithCondition(method = "onEdited", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/components/CommandSuggestions;updateCommandInfo()V"))
-    private boolean disableAutoTabComplete(CommandSuggestions instance) {
+    @WrapWithCondition(method = "onChatFieldUpdate", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screen/ChatInputSuggestor;refresh()V"))
+    private boolean disableAutoTabComplete(ChatInputSuggestor instance) {
         return this.viaFabricPlus$keepTabComplete();
     }
 
     @Unique
     private boolean viaFabricPlus$keepTabComplete() {
-        return !DebugSettings.INSTANCE.legacyTabCompletions.isEnabled() || !this.input.getValue().startsWith("/");
+        return !DebugSettings.INSTANCE.legacyTabCompletions.isEnabled() || !this.chatField.getText().startsWith("/");
     }
 
 }

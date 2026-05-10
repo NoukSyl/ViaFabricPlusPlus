@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,12 +24,12 @@ package com.viaversion.viafabricplus.screen;
 import com.viaversion.viafabricplus.screen.impl.PerServerVersionScreen;
 import com.viaversion.viafabricplus.screen.impl.ProtocolSelectionScreen;
 import com.viaversion.viafabricplus.settings.impl.GeneralSettings;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.ObjectSelectionList;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.widget.AlwaysSelectedEntryListWidget;
 
 /**
- * Wrapper class for {@link ObjectSelectionList} including the following features:
+ * Wrapper class for {@link AlwaysSelectedEntryListWidget} including the following features:
  * <ul>
  *     <li>Changing the constructor arguments to be more readable and customizable</li>
  *     <li>Adds {@link #initScrollY(double)} to save the scroll state after closing the screen, requires static tracking by the implementation</li>
@@ -39,27 +39,27 @@ import net.minecraft.client.gui.components.ObjectSelectionList;
  * @see ProtocolSelectionScreen
  * @see PerServerVersionScreen
  */
-public class VFPList extends ObjectSelectionList<VFPListEntry> {
+public class VFPList extends AlwaysSelectedEntryListWidget<VFPListEntry> {
 
-    public VFPList(Minecraft minecraftClient, int width, int height, int top, int bottom, int entryHeight) {
+    public VFPList(MinecraftClient minecraftClient, int width, int height, int top, int bottom, int entryHeight) {
         super(minecraftClient, width, height - top - bottom, top, entryHeight);
     }
 
     public void initScrollY(final double scrollY) {
         // Needs calling last in init to have data loaded before setting scroll amount
         if (GeneralSettings.INSTANCE.saveScrollPositionInSlotScreens.getValue()) {
-            this.setScrollAmount(scrollY);
+            this.setScrollY(scrollY);
         }
     }
 
     @Override
-    public void setScrollAmount(double scrollY) {
-        super.setScrollAmount(scrollY);
-        updateSlotAmount(scrollAmount()); // Ensure value is clamped
+    public void setScrollY(double scrollY) {
+        super.setScrollY(scrollY);
+        updateSlotAmount(getScrollY()); // Ensure value is clamped
     }
 
     @Override
-    protected void extractSelection(final GuiGraphicsExtractor graphics, final VFPListEntry entry, final int outlineColor) {
+    protected void drawSelectionHighlight(DrawContext context, int y, int entryWidth, int entryHeight, int borderColor, int fillColor) {
         // Remove selection box
     }
 

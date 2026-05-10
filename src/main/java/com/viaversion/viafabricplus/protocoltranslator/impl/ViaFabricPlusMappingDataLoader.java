@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,10 +26,11 @@ import com.viaversion.viaversion.api.data.MappingDataLoader;
 import com.viaversion.viaversion.api.protocol.version.ProtocolVersion;
 import com.viaversion.viaversion.libs.gson.JsonElement;
 import com.viaversion.viaversion.libs.gson.JsonObject;
+import net.minecraft.block.Block;
+import net.minecraft.registry.Registries;
+
 import java.util.HashMap;
 import java.util.Map;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.core.registries.BuiltInRegistries;
 
 public final class ViaFabricPlusMappingDataLoader extends MappingDataLoader {
 
@@ -45,22 +46,18 @@ public final class ViaFabricPlusMappingDataLoader extends MappingDataLoader {
         for (Map.Entry<String, JsonElement> entry : materialsData.getAsJsonObject("materials").entrySet()) {
             final JsonObject materialData = entry.getValue().getAsJsonObject();
             MATERIALS.put(entry.getKey(), new Material(
-                materialData.get("blocksMovement").getAsBoolean(),
-                materialData.get("burnable").getAsBoolean(),
-                materialData.get("liquid").getAsBoolean(),
-                materialData.get("blocksLight").getAsBoolean(),
-                materialData.get("replaceable").getAsBoolean(),
-                materialData.get("solid").getAsBoolean()
+                    materialData.get("blocksMovement").getAsBoolean(),
+                    materialData.get("burnable").getAsBoolean(),
+                    materialData.get("liquid").getAsBoolean(),
+                    materialData.get("blocksLight").getAsBoolean(),
+                    materialData.get("replaceable").getAsBoolean(),
+                    materialData.get("solid").getAsBoolean()
             ));
         }
         for (Map.Entry<String, JsonElement> blockEntry : materialsData.getAsJsonObject("blocks").entrySet()) {
             final Map<ProtocolVersion, String> blockMaterials = new HashMap<>();
             for (Map.Entry<String, JsonElement> entry : blockEntry.getValue().getAsJsonObject().entrySet()) {
-                final ProtocolVersion version = ProtocolVersion.getClosest(entry.getKey());
-                if (version == null) {
-                    throw new IllegalStateException("Unknown protocol version: " + entry.getKey());
-                }
-                blockMaterials.put(version, entry.getValue().getAsString());
+                blockMaterials.put(ProtocolVersion.getClosest(entry.getKey()), entry.getValue().getAsString());
             }
             BLOCK_MATERIALS.put(blockEntry.getKey(), blockMaterials);
         }
@@ -75,11 +72,10 @@ public final class ViaFabricPlusMappingDataLoader extends MappingDataLoader {
             version = ProtocolVersion.v1_19_4;
         }
 
-        final Map<ProtocolVersion, String> materials = BLOCK_MATERIALS.get(BuiltInRegistries.BLOCK.getKey(block).toString());
+        final Map<ProtocolVersion, String> materials = BLOCK_MATERIALS.get(Registries.BLOCK.getId(block).toString());
         if (materials == null) {
             return null;
         }
-
         for (Map.Entry<ProtocolVersion, String> materialEntry : materials.entrySet()) {
             if (version.olderThanOrEqualTo(materialEntry.getKey())) {
                 return materialEntry.getValue();

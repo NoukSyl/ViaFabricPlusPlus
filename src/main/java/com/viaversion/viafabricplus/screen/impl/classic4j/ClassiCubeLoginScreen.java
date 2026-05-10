@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,59 +22,57 @@
 package com.viaversion.viafabricplus.screen.impl.classic4j;
 
 import com.viaversion.viafabricplus.ViaFabricPlusImpl;
-import com.viaversion.viafabricplus.injection.access.core.IEditBox;
+import com.viaversion.viafabricplus.injection.access.base.ITextFieldWidget;
 import com.viaversion.viafabricplus.save.SaveManager;
 import com.viaversion.viafabricplus.save.impl.AccountsSave;
 import com.viaversion.viafabricplus.screen.VFPScreen;
-import de.florianreuth.classic4j.ClassiCubeHandler;
-import de.florianreuth.classic4j.api.LoginProcessHandler;
-import de.florianreuth.classic4j.model.classicube.account.CCAccount;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.screens.ConfirmLinkScreen;
-import net.minecraft.network.chat.Component;
+import de.florianmichael.classic4j.ClassiCubeHandler;
+import de.florianmichael.classic4j.api.LoginProcessHandler;
+import de.florianmichael.classic4j.model.classicube.account.CCAccount;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.screen.ConfirmLinkScreen;
+import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.text.Text;
 
 public final class ClassiCubeLoginScreen extends VFPScreen {
 
     public static final ClassiCubeLoginScreen INSTANCE = new ClassiCubeLoginScreen();
 
     public ClassiCubeLoginScreen() {
-        super(Component.translatable("screen.viafabricplus.classicube_login"), true);
+        super(Text.translatable("screen.viafabricplus.classicube_login"), true);
     }
 
-    private EditBox nameField;
-    private EditBox passwordField;
+    private TextFieldWidget nameField;
+    private TextFieldWidget passwordField;
 
     @Override
     protected void init() {
         super.init();
-        if (this.getSubtitle() == null) {
-            this.setupSubtitle(Component.translatable("classicube.viafabricplus.account"), ConfirmLinkScreen.confirmLink(this, ClassiCubeHandler.CLASSICUBE_ROOT_URI.toString()));
-        }
+        this.setupSubtitle(Text.translatable("classicube.viafabricplus.account"), ConfirmLinkScreen.opening(this, ClassiCubeHandler.CLASSICUBE_ROOT_URI.toString()));
 
-        this.addRenderableWidget(nameField = new EditBox(font, width / 2 - 150, 70 + 10, 300, 20, Component.empty()));
-        this.addRenderableWidget(passwordField = new EditBox(font, width / 2 - 150, nameField.getY() + 20 + 5, 300, 20, Component.empty()));
-        passwordField.addFormatter((s, integer) -> Component.nullToEmpty("*".repeat(s.length())).getVisualOrderText());
+        this.addDrawableChild(nameField = new TextFieldWidget(textRenderer, width / 2 - 150, 70 + 10, 300, 20, Text.empty()));
+        this.addDrawableChild(passwordField = new TextFieldWidget(textRenderer, width / 2 - 150, nameField.getY() + 20 + 5, 300, 20, Text.empty()));
+        passwordField.setRenderTextProvider((s, integer) -> Text.of("*".repeat(s.length())).asOrderedText());
 
-        nameField.setHint(Component.translatable("base.viafabricplus.name"));
-        passwordField.setHint(Component.translatable("base.viafabricplus.password"));
+        nameField.setPlaceholder(Text.translatable("base.viafabricplus.name"));
+        passwordField.setPlaceholder(Text.translatable("base.viafabricplus.password"));
 
         nameField.setMaxLength(Integer.MAX_VALUE);
         passwordField.setMaxLength(Integer.MAX_VALUE);
 
-        ((IEditBox) nameField).viaFabricPlus$unlockForbiddenCharacters();
-        ((IEditBox) passwordField).viaFabricPlus$unlockForbiddenCharacters();
+        ((ITextFieldWidget) nameField).viaFabricPlus$unlockForbiddenCharacters();
+        ((ITextFieldWidget) passwordField).viaFabricPlus$unlockForbiddenCharacters();
 
         final AccountsSave accountsSave = SaveManager.INSTANCE.getAccountsSave();
         if (accountsSave.getClassicubeAccount() != null) {
-            nameField.setValue(accountsSave.getClassicubeAccount().username());
-            passwordField.setValue(accountsSave.getClassicubeAccount().username());
+            nameField.setText(accountsSave.getClassicubeAccount().username());
+            passwordField.setText(accountsSave.getClassicubeAccount().username());
         }
 
-        this.addRenderableWidget(Button.builder(Component.translatable("base.viafabricplus.login"), button -> {
-            accountsSave.setClassicubeAccount(new CCAccount(nameField.getValue(), passwordField.getValue()));
-            this.setupSubtitle(Component.translatable("classicube.viafabricplus.loading"));
+        this.addDrawableChild(ButtonWidget.builder(Text.translatable("base.viafabricplus.login"), button -> {
+            accountsSave.setClassicubeAccount(new CCAccount(nameField.getText(), passwordField.getText()));
+            this.setupSubtitle(Text.translatable("classicube.viafabricplus.loading"));
 
             ClassiCubeHandler.requestAuthentication(accountsSave.getClassicubeAccount(), null, new LoginProcessHandler() {
 
@@ -85,29 +83,29 @@ public final class ClassiCubeLoginScreen extends VFPScreen {
 
                 @Override
                 public void handleSuccessfulLogin(CCAccount account) {
-                    ClassiCubeServerListScreen.INSTANCE.open(prevScreen);
+                    ClassiCubeServerListScreen.open(prevScreen, this);
                 }
 
                 @Override
                 public void handleException(Throwable throwable) {
-                    ViaFabricPlusImpl.INSTANCE.getLogger().error("Error while logging in to ClassiCube!", throwable);
-                    setupSubtitle(Component.nullToEmpty(throwable.getMessage()));
+                    ViaFabricPlusImpl.INSTANCE.logger().error("Error while logging in to ClassiCube!", throwable);
+                    setupSubtitle(Text.of(throwable.getMessage()));
                 }
             });
-        }).pos(width / 2 - 75, passwordField.getY() + (20 * 4) + 5).size(150, 20).build());
+        }).position(width / 2 - 75, passwordField.getY() + (20 * 4) + 5).size(150, 20).build());
     }
 
     @Override
-    public void onClose() {
+    public void close() {
         // The user wasn't logged in when opening this screen, so he cancelled the login process, so we can safely unset the account
         SaveManager.INSTANCE.getAccountsSave().setClassicubeAccount(null);
-        super.onClose();
+        super.close();
     }
 
     @Override
-    public void extractRenderState(final GuiGraphicsExtractor graphics, final int mouseX, final int mouseY, final float a) {
-        super.extractRenderState(graphics, mouseX, mouseY, a);
-        this.renderScreenTitle(graphics);
+    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        super.render(context, mouseX, mouseY, delta);
+        this.renderScreenTitle(context);
     }
 
 }

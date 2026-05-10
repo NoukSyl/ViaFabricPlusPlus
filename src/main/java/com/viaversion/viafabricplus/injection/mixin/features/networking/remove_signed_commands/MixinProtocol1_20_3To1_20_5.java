@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ public abstract class MixinProtocol1_20_3To1_20_5 extends AbstractProtocol<Clien
 
         // Don't allow mods to directly send packets - Use ClientPlayNetworkHandler#sendChatCommand instead
         registerServerbound(ServerboundPackets1_20_5.CHAT_COMMAND, ServerboundPackets1_20_3.CHAT_COMMAND, wrapper -> {
-            NotificationUtil.warnIncompatibilityPacket("1.20.5", "CHAT_COMMAND", "ClientPacketListener#sendCommand");
+            NotificationUtil.warnIncompatibilityPacket("1.20.5", "CHAT_COMMAND", "ClientPlayNetworkHandler#sendChatCommand", "ClientPacketListener#sendCommand");
             wrapper.cancel();
         }, true);
     }

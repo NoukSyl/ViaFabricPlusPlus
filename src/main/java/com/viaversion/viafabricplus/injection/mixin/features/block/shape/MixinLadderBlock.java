@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,71 +23,43 @@ package com.viaversion.viafabricplus.injection.mixin.features.block.shape;
 
 import com.viaversion.viafabricplus.protocoltranslator.ProtocolTranslator;
 import com.viaversion.viaversion.api.protocol.version.ProtocolVersion;
-import java.util.Map;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.LadderBlock;
-import net.minecraft.world.level.block.state.properties.EnumProperty;
-import net.minecraft.core.Direction;
-import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraft.world.phys.shapes.Shapes;
-import net.raphimc.viabedrock.api.BedrockProtocolVersion;
-import org.spongepowered.asm.mixin.Final;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.LadderBlock;
+import net.minecraft.block.ShapeContext;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.shape.VoxelShape;
+import net.minecraft.world.BlockView;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(LadderBlock.class)
-public abstract class MixinLadderBlock extends Block {
+public abstract class MixinLadderBlock {
 
     @Unique
-    private static final Map<Direction, VoxelShape> viaFabricPlus$shapes_r1_8_x = Map.of(
-        Direction.NORTH, Block.box(0.0D, 0.0D, 14.0D, 16.0D, 16.0D, 16.0D),
-        Direction.SOUTH, Block.box(0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 2.0D),
-        Direction.WEST, Block.box(14.0D, 0.0D, 0.0D, 16.0D, 16.0D, 16.0D),
-        Direction.EAST, Block.box(0.0D, 0.0D, 0.0D, 2.0D, 16.0D, 16.0D)
-    );
+    private static final VoxelShape viaFabricPlus$east_shape_r1_8_x = Block.createCuboidShape(0.0D, 0.0D, 0.0D, 2.0D, 16.0D, 16.0D);
 
     @Unique
-    private static final Map<Direction, VoxelShape> viaFabricPlus$shapes_bedrock = Map.of(
-        Direction.NORTH, Shapes.box(0, 0, 0.8125, 1, 1, 1),
-        Direction.SOUTH, Shapes.box(0, 0, 0, 1, 1, 0.1875),
-        Direction.WEST, Shapes.box(0.8125, 0, 0, 1, 1, 1),
-        Direction.EAST, Shapes.box(0, 0, 0, 0.1875, 1, 1)
-    );
+    private static final VoxelShape viaFabricPlus$west_shape_r1_8_x = Block.createCuboidShape(14.0D, 0.0D, 0.0D, 16.0D, 16.0D, 16.0D);
 
-    @Shadow
-    @Final
-    public static Map<Direction, VoxelShape> SHAPES;
+    @Unique
+    private static final VoxelShape viaFabricPlus$south_shape_r1_8_x = Block.createCuboidShape(0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 2.0D);
 
-    @Shadow
-    @Final
-    public static EnumProperty<Direction> FACING;
+    @Unique
+    private static final VoxelShape viaFabricPlus$north_shape_r1_8_x = Block.createCuboidShape(0.0D, 0.0D, 14.0D, 16.0D, 16.0D, 16.0D);
 
-    public MixinLadderBlock(final Properties settings) {
-        super(settings);
-    }
-
-    @Redirect(method = "getShape", at = @At(value = "FIELD", target = "Lnet/minecraft/world/level/block/LadderBlock;SHAPES:Ljava/util/Map;"))
-    private Map<Direction, VoxelShape> changeOutlineShape() {
+    @Inject(method = "getOutlineShape", at = @At("HEAD"), cancellable = true)
+    private void changeOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context, CallbackInfoReturnable<VoxelShape> ci) {
         if (ProtocolTranslator.getTargetVersion().olderThanOrEqualTo(ProtocolVersion.v1_8)) {
-            return viaFabricPlus$shapes_r1_8_x;
-        } else if (ProtocolTranslator.getTargetVersion().equals(BedrockProtocolVersion.bedrockLatest)) {
-            return viaFabricPlus$shapes_bedrock;
-        } else {
-            return SHAPES;
-        }
-    }
-
-    @Override
-    public VoxelShape getOcclusionShape(BlockState state) {
-        if (ProtocolTranslator.getTargetVersion().olderThanOrEqualTo(ProtocolVersion.v1_8)
-            || ProtocolTranslator.getTargetVersion().equals(BedrockProtocolVersion.bedrockLatest)) {
-            return SHAPES.get(state.getValue(FACING));
-        } else {
-            return super.getOcclusionShape(state);
+            switch (state.get(LadderBlock.FACING)) {
+                case NORTH -> ci.setReturnValue(viaFabricPlus$north_shape_r1_8_x);
+                case SOUTH -> ci.setReturnValue(viaFabricPlus$south_shape_r1_8_x);
+                case WEST -> ci.setReturnValue(viaFabricPlus$west_shape_r1_8_x);
+                default -> ci.setReturnValue(viaFabricPlus$east_shape_r1_8_x);
+            }
         }
     }
 

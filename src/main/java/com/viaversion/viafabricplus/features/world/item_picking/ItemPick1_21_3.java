@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,76 +21,71 @@
 
 package com.viaversion.viafabricplus.features.world.item_picking;
 
-import com.mojang.logging.LogUtils;
 import com.viaversion.viafabricplus.protocoltranslator.ProtocolTranslator;
 import com.viaversion.viaversion.api.protocol.packet.PacketWrapper;
 import com.viaversion.viaversion.api.type.Types;
 import com.viaversion.viaversion.protocols.v1_21_2to1_21_4.Protocol1_21_2To1_21_4;
 import com.viaversion.viaversion.protocols.v1_21to1_21_2.packet.ServerboundPackets1_21_2;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.client.Minecraft;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.core.RegistryAccess;
-import net.minecraft.world.level.storage.TagValueOutput;
-import net.minecraft.util.ProblemReporter;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.EntityHitResult;
-import net.minecraft.world.phys.HitResult;
-import net.minecraft.core.BlockPos;
-import org.slf4j.Logger;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.item.BlockItem;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.registry.DynamicRegistryManager;
+import net.minecraft.util.Hand;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.hit.EntityHitResult;
+import net.minecraft.util.hit.HitResult;
+import net.minecraft.util.math.BlockPos;
 
 public final class ItemPick1_21_3 {
 
-    private static final Logger LOGGER = LogUtils.getLogger();
-
-    private static void addPickBlock(final Inventory inventory, final ItemStack stack) {
-        final int index = inventory.findSlotMatchingItem(stack);
-        if (Inventory.isHotbarSlot(index)) {
-            inventory.setSelectedSlot(index);
+    private static void addPickBlock(final PlayerInventory inventory, final ItemStack stack) {
+        final int index = inventory.getSlotWithStack(stack);
+        if (PlayerInventory.isValidHotbarIndex(index)) {
+            inventory.selectedSlot = index;
         } else if (index != -1) {
-            inventory.pickSlot(index);
+            inventory.swapSlotWithHotbar(index);
         } else {
-            inventory.addAndPickItem(stack);
+            inventory.swapStackWithHotbar(stack);
         }
     }
 
-    private static void addBlockEntityNbt(final ItemStack stack, final BlockEntity blockEntity, final RegistryAccess manager) {
-        try (final ProblemReporter.ScopedCollector logging = new ProblemReporter.ScopedCollector(blockEntity.problemPath(), LOGGER)) {
-            final TagValueOutput view = TagValueOutput.createWithContext(logging, manager);
-            blockEntity.saveMetadata(view);
-            BlockItem.setBlockEntityData(stack, blockEntity.getType(), view);
-            stack.applyComponents(blockEntity.collectComponents());
-        }
+    private static void addBlockEntityNbt(final ItemStack stack, final BlockEntity blockEntity, final DynamicRegistryManager manager) {
+        final NbtCompound nbtCompound = blockEntity.createComponentlessNbtWithIdentifyingData(manager);
+        blockEntity.removeFromCopiedStackNbt(nbtCompound);
+
+        BlockItem.setBlockEntityData(stack, blockEntity.getType(), nbtCompound);
+        stack.applyComponentsFrom(blockEntity.createComponentMap());
     }
 
-    public static void doItemPick(final Minecraft client) {
-        final boolean creativeMode = client.player.getAbilities().instabuild;
+    public static void doItemPick(final MinecraftClient client) {
+        final boolean creativeMode = client.player.getAbilities().creativeMode;
 
         ItemStack itemStack;
-        final HitResult crosshairTarget = client.hitResult;
+        final HitResult crosshairTarget = client.crosshairTarget;
         if (crosshairTarget.getType() == HitResult.Type.BLOCK) {
             final BlockPos blockPos = ((BlockHitResult) crosshairTarget).getBlockPos();
-            final BlockState blockState = client.level.getBlockState(blockPos);
+            final BlockState blockState = client.world.getBlockState(blockPos);
             if (blockState.isAir()) {
                 return;
             }
 
             final Block block = blockState.getBlock();
-            itemStack = block.getCloneItemStack(client.level, blockPos, blockState, false);
+            itemStack = block.getPickStack(client.world, blockPos, blockState, false);
             if (itemStack.isEmpty()) {
                 return;
             }
 
-            if (creativeMode && client.hasControlDown() && blockState.hasBlockEntity()) {
-                final BlockEntity blockEntity = client.level.getBlockEntity(blockPos);
+            if (creativeMode && Screen.hasControlDown() && blockState.hasBlockEntity()) {
+                final BlockEntity blockEntity = client.world.getBlockEntity(blockPos);
                 if (blockEntity != null) {
-                    addBlockEntityNbt(itemStack, blockEntity, client.level.registryAccess());
+                    addBlockEntityNbt(itemStack, blockEntity, client.world.getRegistryManager());
                 }
             }
         } else {
@@ -99,7 +94,7 @@ public final class ItemPick1_21_3 {
             }
 
             final Entity entity = ((EntityHitResult) crosshairTarget).getEntity();
-            itemStack = entity.getPickResult();
+            itemStack = entity.getPickBlockStack();
             if (itemStack == null) {
                 return;
             }
@@ -109,14 +104,14 @@ public final class ItemPick1_21_3 {
             return;
         }
 
-        final Inventory inventory = client.player.getInventory();
-        final int index = inventory.findSlotMatchingItem(itemStack);
+        final PlayerInventory inventory = client.player.getInventory();
+        final int index = inventory.getSlotWithStack(itemStack);
         if (creativeMode) {
             addPickBlock(inventory, itemStack);
-            client.gameMode.handleCreativeModeItemAdd(client.player.getItemInHand(InteractionHand.MAIN_HAND), 36 + inventory.getSelectedSlot());
+            client.interactionManager.clickCreativeStack(client.player.getStackInHand(Hand.MAIN_HAND), 36 + inventory.selectedSlot);
         } else if (index != -1) {
-            if (Inventory.isHotbarSlot(index)) {
-                inventory.setSelectedSlot(index);
+            if (PlayerInventory.isValidHotbarIndex(index)) {
+                inventory.selectedSlot = index;
                 return;
             }
 

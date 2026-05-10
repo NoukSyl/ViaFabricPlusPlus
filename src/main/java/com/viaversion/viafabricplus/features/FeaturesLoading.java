@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,57 +22,67 @@
 package com.viaversion.viafabricplus.features;
 
 import com.viaversion.viaaprilfools.api.AprilFoolsProtocolVersion;
-import com.viaversion.viafabricplus.ViaFabricPlusImpl;
-import com.viaversion.viafabricplus.features.block.connections.BlockConnectionsEmulation1_12_2;
+import com.viaversion.viafabricplus.api.events.LoadingCycleCallback;
+import com.viaversion.viafabricplus.base.Events;
 import com.viaversion.viafabricplus.features.block.shape.CollisionShapes;
 import com.viaversion.viafabricplus.features.classic.cpe_extension.CPEAdditions;
-import com.viaversion.viafabricplus.features.entity.dimensions.EntityDimensionDiff;
+import com.viaversion.viafabricplus.features.emulation.armor_hud.ArmorHudEmulation1_8;
+import com.viaversion.viafabricplus.features.emulation.recipe.Recipes1_11_2;
+import com.viaversion.viafabricplus.features.entity.EntityDimensionDiff;
 import com.viaversion.viafabricplus.features.entity.attribute.EnchantmentAttributesEmulation1_20_6;
-import com.viaversion.viafabricplus.features.font.FontCacheReload;
-import com.viaversion.viafabricplus.features.font.RenderableGlyphDiff;
-import com.viaversion.viafabricplus.features.world.footstep_particle.FootStepParticle1_12_2;
-import com.viaversion.viafabricplus.features.item.filter_creative_tabs.VersionedRegistries;
-import com.viaversion.viafabricplus.features.networking.armor_hud.ArmorHudEmulation1_8;
+import com.viaversion.viafabricplus.features.footstep_particle.FootStepParticle1_12_2;
 import com.viaversion.viafabricplus.features.networking.resource_pack_header.ResourcePackHeaderDiff;
-import com.viaversion.viafabricplus.features.recipe.Recipes1_11_2;
+import com.viaversion.viafabricplus.features.font.replace_blank_glyph.FontCacheReload;
 import com.viaversion.viaversion.api.protocol.version.ProtocolVersion;
-import net.minecraft.client.Minecraft;
-import net.minecraft.world.attribute.EnvironmentAttributes;
+import net.minecraft.client.MinecraftClient;
 
 public final class FeaturesLoading {
 
-    // Initialize various data classes required for feature mixins
-    public static void init() {
+    static {
+        // Check if the pack format mappings are correct
         ResourcePackHeaderDiff.init();
-        RenderableGlyphDiff.init();
-        FootStepParticle1_12_2.init();
+
+        // Register additional CPE features
         CPEAdditions.init();
 
-        ViaFabricPlusImpl.CHANGE_PROTOCOL_VERSION.register((oldVersion, newVersion) -> Minecraft.getInstance().execute(() -> {
+        // Register the footstep particle
+        FootStepParticle1_12_2.init();
+
+        Events.LOADING_CYCLE.register(cycle -> {
+            if (cycle == LoadingCycleCallback.LoadingCycle.POST_GAME_LOAD) {
+                // Handle clientside enchantment calculations in <= 1.20.6
+                EnchantmentAttributesEmulation1_20_6.init();
+
+                // Handles and updates entity dimension changes in <= 1.17
+                EntityDimensionDiff.init();
+
+                // Ticks the armor hud manually in <= 1.8.x
+                ArmorHudEmulation1_8.init();
+            }
+        });
+
+        // Reloads some clientside stuff when the protocol version changes
+        Events.CHANGE_PROTOCOL_VERSION.register((oldVersion, newVersion) -> MinecraftClient.getInstance().execute(() -> {
+            // Reloads all bounding boxes of the blocks that we changed
             CollisionShapes.reloadBlockShapes();
 
-            if (oldVersion.equals(AprilFoolsProtocolVersion.s3d_shareware) || newVersion.equals(AprilFoolsProtocolVersion.s3d_shareware)) {
-                Minecraft.getInstance().getSoundManager().reload();
-            }
-
+            // Clears the font cache to replace the empty glyph
             FontCacheReload.reload();
 
+            // Reloads the clientside recipes
             if (newVersion.olderThanOrEqualTo(ProtocolVersion.v1_11_1)) {
                 Recipes1_11_2.reset();
             }
 
-            EnvironmentAttributes.RESPAWN_ANCHOR_WORKS.isSyncable = newVersion.olderThanOrEqualTo(ProtocolVersion.v1_21_9);
+            // Reload sound system when switching between 3D Shareware and normal versions
+            if (oldVersion.equals(AprilFoolsProtocolVersion.s3d_shareware) || newVersion.equals(AprilFoolsProtocolVersion.s3d_shareware)) {
+                MinecraftClient.getInstance().getSoundManager().reloadSounds();
+            }
         }));
     }
 
-    // Make sure this is called *after* ViaVersion has been initialized
-    public static void postInit() {
-        VersionedRegistries.init();
-        EntityDimensionDiff.init();
-        EnchantmentAttributesEmulation1_20_6.init();
-        BlockConnectionsEmulation1_12_2.init();
-        Recipes1_11_2.init();
-        ArmorHudEmulation1_8.init();
+    public static void init() {
+        // Calls the static block
     }
 
 }

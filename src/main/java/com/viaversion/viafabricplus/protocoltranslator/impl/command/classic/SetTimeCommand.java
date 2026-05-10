@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,13 +21,13 @@
 
 package com.viaversion.viafabricplus.protocoltranslator.impl.command.classic;
 
-import com.viaversion.viafabricplus.protocoltranslator.impl.command.VFPSubCommand;
+import com.viaversion.viafabricplus.protocoltranslator.impl.command.VFPViaSubCommand;
 import com.viaversion.viaversion.api.command.ViaCommandSender;
-import net.minecraft.ChatFormatting;
+import net.minecraft.util.Formatting;
 import net.raphimc.vialegacy.api.LegacyProtocolVersion;
 import net.raphimc.vialegacy.protocol.alpha.a1_0_16_2toa1_0_17_1_0_17_4.storage.TimeLockStorage;
 
-public final class SetTimeCommand implements VFPSubCommand {
+public final class SetTimeCommand implements VFPViaSubCommand {
 
     @Override
     public String name() {
@@ -47,14 +47,14 @@ public final class SetTimeCommand implements VFPSubCommand {
     @Override
     public boolean execute(ViaCommandSender sender, String[] args) {
         if (getUser() == null || !getUser().has(TimeLockStorage.class)) {
-            sendMessage(sender, ChatFormatting.RED + "Only for <= " + LegacyProtocolVersion.a1_0_16toa1_0_16_2.getName());
+            sendMessage(sender, Formatting.RED + "Only for <= " + LegacyProtocolVersion.a1_0_16toa1_0_16_2.getName());
             return true;
         }
         try {
             if (args.length == 1) {
                 final long time = Long.parseLong(args[0]) % 24_000L;
                 getUser().get(TimeLockStorage.class).setTime(time);
-                sendMessage(sender, ChatFormatting.GREEN + "Time has been set to " + ChatFormatting.GOLD + time);
+                sendMessage(sender, Formatting.GREEN + "Time has been set to " + Formatting.GOLD + time);
             } else {
                 return false;
             }

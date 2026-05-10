@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,118 +24,106 @@ package com.viaversion.viafabricplus.settings.impl;
 import com.viaversion.viafabricplus.api.settings.SettingGroup;
 import com.viaversion.viafabricplus.api.settings.type.BooleanSetting;
 import com.viaversion.viafabricplus.api.settings.type.ButtonSetting;
-import com.viaversion.viafabricplus.injection.access.core.bedrock.IConfirmScreen;
+import com.viaversion.viafabricplus.injection.access.base.bedrock.IConfirmScreen;
 import com.viaversion.viafabricplus.save.SaveManager;
 import com.viaversion.viafabricplus.save.impl.AccountsSave;
 import com.viaversion.viafabricplus.screen.VFPScreen;
-import com.viaversion.viafabricplus.screen.impl.SettingsScreen;
 import com.viaversion.viaversion.api.protocol.version.ProtocolVersion;
-import java.util.Objects;
-import java.util.function.Consumer;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.ConfirmScreen;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.ConfirmScreen;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.Text;
 import net.minecraft.util.Util;
 import net.raphimc.minecraftauth.MinecraftAuth;
-import net.raphimc.minecraftauth.bedrock.BedrockAuthManager;
-import net.raphimc.minecraftauth.msa.model.MsaDeviceCode;
-import net.raphimc.minecraftauth.msa.service.impl.DeviceCodeMsaAuthService;
-import net.raphimc.minecraftauth.util.holder.listener.ChangeListener;
+import net.raphimc.minecraftauth.step.AbstractStep;
+import net.raphimc.minecraftauth.step.bedrock.session.StepFullBedrockSession;
+import net.raphimc.minecraftauth.step.msa.StepMsaDeviceCode;
+import net.raphimc.minecraftauth.step.msa.StepMsaDeviceCodeMsaCode;
+import net.raphimc.minecraftauth.util.MicrosoftConstants;
+import net.raphimc.minecraftauth.util.logging.ILogger;
+import net.raphimc.minecraftauth.util.logging.Slf4jConsoleLogger;
 import net.raphimc.viabedrock.api.BedrockProtocolVersion;
 import net.raphimc.viabedrock.protocol.data.ProtocolConstants;
 
+import java.util.Locale;
+import java.util.Objects;
+
 public final class BedrockSettings extends SettingGroup {
 
-    private static final Component TITLE = Component.nullToEmpty("Microsoft Bedrock login");
+    private static final Text TITLE = Text.of("Microsoft Bedrock login");
 
     public static final BedrockSettings INSTANCE = new BedrockSettings();
 
+    public static final AbstractStep<?, StepFullBedrockSession.FullBedrockSession> BEDROCK_DEVICE_CODE_LOGIN = MinecraftAuth.builder()
+            .withClientId(MicrosoftConstants.BEDROCK_ANDROID_TITLE_ID).withScope(MicrosoftConstants.SCOPE_TITLE_AUTH)
+            .deviceCode()
+            .withDeviceToken("Android")
+            .sisuTitleAuthentication(MicrosoftConstants.BEDROCK_XSTS_RELYING_PARTY)
+            .buildMinecraftBedrockChainStep(true, true);
+
     private Thread thread;
-    private final ButtonSetting clickToSetBedrockAccount = new ButtonSetting(this, Component.translatable("bedrock_settings.viafabricplus.click_to_set_bedrock_account"), () -> {
+    private final ButtonSetting clickToSetBedrockAccount = new ButtonSetting(this, Text.translatable("bedrock_settings.viafabricplus.click_to_set_bedrock_account"), () -> {
         thread = new Thread(this::openBedrockAccountLogin);
         thread.start();
     }) {
 
         @Override
-        public MutableComponent displayValue() {
-            final BedrockAuthManager account = SaveManager.INSTANCE.getAccountsSave().getBedrockAccount();
-            if (account != null && account.getMinecraftMultiplayerToken().hasValue()) {
-                return Component.translatable("click_to_set_bedrock_account.viafabricplus.display", account.getMinecraftMultiplayerToken().getCached().getDisplayName());
+        public MutableText displayValue() {
+            final StepFullBedrockSession.FullBedrockSession account = SaveManager.INSTANCE.getAccountsSave().getBedrockAccount();
+            if (account != null) {
+                return Text.translatable("click_to_set_bedrock_account.viafabricplus.display", account.getMcChain().getDisplayName());
             } else {
                 return super.displayValue();
             }
         }
     };
-    public final BooleanSetting replaceDefaultPort = new BooleanSetting(this, Component.translatable("bedrock_settings.viafabricplus.replace_default_port"), true);
-    public final BooleanSetting experimentalFeatures = new BooleanSetting(this, Component.translatable("bedrock_settings.viafabricplus.experimental_features"), true);
+    public final BooleanSetting replaceDefaultPort = new BooleanSetting(this, Text.translatable("bedrock_settings.viafabricplus.replace_default_port"), true);
+
+    private final ILogger GUI_LOGGER = new Slf4jConsoleLogger() {
+        @Override
+        public void info(AbstractStep<?, ?> step, String message) {
+            super.info(step, message);
+            if (step instanceof StepMsaDeviceCodeMsaCode) {
+                return;
+            }
+            MinecraftClient.getInstance().execute(() -> {
+                if (MinecraftClient.getInstance().currentScreen instanceof ConfirmScreen confirmScreen) {
+                    ((IConfirmScreen) confirmScreen).viaFabricPlus$setMessage(Text.translatable("minecraftauth_library.viafabricplus." + step.name.toLowerCase(Locale.ROOT)));
+                }
+            });
+        }
+    };
 
     public BedrockSettings() {
-        super(Component.translatable("setting_group_name.viafabricplus.bedrock"));
+        super(Text.translatable("setting_group_name.viafabricplus.bedrock"));
     }
 
     private void openBedrockAccountLogin() {
         final AccountsSave accountsSave = SaveManager.INSTANCE.getAccountsSave();
 
-        final Minecraft client = Minecraft.getInstance();
-        final Screen prevScreen = client.screen;
+        final MinecraftClient client = MinecraftClient.getInstance();
+        final Screen prevScreen = client.currentScreen;
         try {
-            final BedrockAuthManager bedrockAccount = BedrockAuthManager
-                .create(MinecraftAuth.createHttpClient(), ProtocolConstants.BEDROCK_VERSION_NAME)
-                .login(DeviceCodeMsaAuthService::new, (Consumer<MsaDeviceCode>) msaDeviceCode -> {
-                    VFPScreen.setScreen(new ConfirmScreen(copyUrl -> {
-                        if (copyUrl) {
-                            client.keyboardHandler.setClipboard(msaDeviceCode.getDirectVerificationUri());
-                        } else {
-                            client.setScreen(prevScreen);
-                            this.thread.interrupt();
-                        }
-                    }, TITLE, Component.translatable("click_to_set_bedrock_account.viafabricplus.notice"), Component.translatable("base.viafabricplus.copy_link"), Component.translatable("base.viafabricplus.cancel")));
-                    Util.getPlatform().openUri(msaDeviceCode.getDirectVerificationUri());
-                });
-            bedrockAccount.getChangeListeners().add(new ChangeListener() {
-                @Override
-                public <T> void onChange(final T oldValue, final T newValue) {
-                    if (newValue == bedrockAccount.getMsaToken().getCached()) {
-                        updateLoginStatusMessage("msatoken");
-                    } else if (newValue == bedrockAccount.getXblDeviceToken().getCached()) {
-                        updateLoginStatusMessage("xbldevicetoken");
-                    } else if (newValue == bedrockAccount.getXblUserToken().getCached()) {
-                        updateLoginStatusMessage("xblusertoken");
-                    } else if (newValue == bedrockAccount.getXblTitleToken().getCached()) {
-                        updateLoginStatusMessage("xbltitletoken");
-                    } else if (newValue == bedrockAccount.getBedrockXstsToken().getCached()) {
-                        updateLoginStatusMessage("bedrockxststoken");
-                    } else if (newValue == bedrockAccount.getPlayFabXstsToken().getCached()) {
-                        updateLoginStatusMessage("playfabxststoken");
-                    } else if (newValue == bedrockAccount.getRealmsXstsToken().getCached()) {
-                        updateLoginStatusMessage("realmsxststoken");
-                    } else if (newValue == bedrockAccount.getPlayFabToken().getCached()) {
-                        updateLoginStatusMessage("playfabtoken");
-                    } else if (newValue == bedrockAccount.getMinecraftSession().getCached()) {
-                        updateLoginStatusMessage("minecraftsession");
-                    } else if (newValue == bedrockAccount.getMinecraftMultiplayerToken().getCached()) {
-                        updateLoginStatusMessage("minecraftmultiplayertoken");
-                    } else if (newValue == bedrockAccount.getMinecraftCertificateChain().getCached()) {
-                        updateLoginStatusMessage("minecraftcertificatechain");
+            accountsSave.setBedrockAccount(BEDROCK_DEVICE_CODE_LOGIN.getFromInput(GUI_LOGGER, MinecraftAuth.createHttpClient(), new StepMsaDeviceCode.MsaDeviceCodeCallback(msaDeviceCode -> {
+                VFPScreen.setScreen(new ConfirmScreen(copyUrl -> {
+                    if (copyUrl) {
+                        client.keyboard.setClipboard(msaDeviceCode.getDirectVerificationUri());
+                    } else {
+                        client.setScreen(prevScreen);
+                        this.thread.interrupt();
                     }
-                }
-            });
-            bedrockAccount.getMinecraftMultiplayerToken().refreshIfExpired();
-            bedrockAccount.getMinecraftCertificateChain().refreshIfExpired();
-            accountsSave.setBedrockAccount(bedrockAccount);
+                }, TITLE, Text.translatable("click_to_set_bedrock_account.viafabricplus.notice"), Text.translatable("base.viafabricplus.copy_link"), Text.translatable("base.viafabricplus.cancel")));
+                Util.getOperatingSystem().open(msaDeviceCode.getDirectVerificationUri());
+            })));
 
             VFPScreen.setScreen(prevScreen);
         } catch (Exception e) {
             if (e instanceof InterruptedException) {
                 return;
             }
-
             this.thread.interrupt();
-            if (client.screen instanceof SettingsScreen) { // The user might have already left the screen and joined a server
-                VFPScreen.showErrorScreen(TITLE, e, prevScreen);
-            }
+            VFPScreen.showErrorScreen(TITLE, e, prevScreen);
         }
     }
 
@@ -150,18 +138,10 @@ public final class BedrockSettings extends SettingGroup {
         // If the default port for this entry should be replaced, check if the address already contains a port
         // We can't just replace vanilla's default port because a bedrock server might be running on the same port
         if (BedrockSettings.INSTANCE.replaceDefaultPort.getValue() && Objects.equals(version, BedrockProtocolVersion.bedrockLatest) && !address.contains(":")) {
-            return address + ":" + ProtocolConstants.BEDROCK_RAKNET_DEFAULT_PORT;
+            return address + ":" + ProtocolConstants.BEDROCK_DEFAULT_PORT;
         } else {
             return address;
         }
-    }
-
-    private static void updateLoginStatusMessage(final String stepName) {
-        Minecraft.getInstance().execute(() -> {
-            if (Minecraft.getInstance().screen instanceof ConfirmScreen confirmScreen) {
-                ((IConfirmScreen) confirmScreen).viaFabricPlus$updateMessage(Component.translatable("minecraftauth_library.viafabricplus." + stepName));
-            }
-        });
     }
 
 }

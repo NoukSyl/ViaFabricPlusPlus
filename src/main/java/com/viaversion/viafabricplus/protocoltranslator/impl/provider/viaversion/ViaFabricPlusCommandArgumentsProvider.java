@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,24 +23,25 @@ package com.viaversion.viafabricplus.protocoltranslator.impl.provider.viaversion
 
 import com.viaversion.viaversion.api.minecraft.signature.SignableCommandArgumentsProvider;
 import com.viaversion.viaversion.util.Pair;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.network.ClientPlayNetworkHandler;
+import net.minecraft.command.argument.SignedArgumentList;
+
 import java.util.Collections;
 import java.util.List;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientPacketListener;
-import net.minecraft.network.chat.SignableCommand;
 
 public final class ViaFabricPlusCommandArgumentsProvider extends SignableCommandArgumentsProvider {
 
     @Override
     public List<Pair<String, String>> getSignableArguments(String command) {
-        final ClientPacketListener network = Minecraft.getInstance().getConnection();
+        final ClientPlayNetworkHandler network = MinecraftClient.getInstance().getNetworkHandler();
 
         if (network != null) {
-            return SignableCommand.of(
-                    network.getCommands().parse(command, network.getSuggestionsProvider())).
-                arguments().stream().
-                map(function -> new Pair<>(function.name(), function.value())).
-                toList();
+            return SignedArgumentList.of(
+                            network.getCommandDispatcher().parse(command, network.getCommandSource())).
+                    arguments().stream().
+                    map(function -> new Pair<>(function.getNodeName(), function.value())).
+                    toList();
         } else {
             return Collections.emptyList();
         }

@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,33 +21,33 @@
 
 package com.viaversion.viafabricplus.features.world.disable_sequencing;
 
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.multiplayer.prediction.BlockStatePredictionHandler;
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.core.BlockPos;
+import net.minecraft.block.BlockState;
+import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.client.network.PendingUpdateManager;
+import net.minecraft.client.world.ClientWorld;
+import net.minecraft.util.math.BlockPos;
 
 /**
- * No-op implementation of {@link BlockStatePredictionHandler} for 1.18.2 and lower since those versions don't have the
- * {@link BlockStatePredictionHandler} class.
+ * No-op implementation of {@link PendingUpdateManager} for 1.18.2 and lower since those versions don't have the
+ * {@link PendingUpdateManager} class.
  */
-public final class PendingUpdateManager1_18_2 extends BlockStatePredictionHandler {
+public final class PendingUpdateManager1_18_2 extends PendingUpdateManager {
 
     @Override
-    public void retainKnownServerState(BlockPos pos, BlockState state, LocalPlayer player) {
+    public void addPendingUpdate(BlockPos pos, BlockState state, ClientPlayerEntity player) {
     }
 
     @Override
-    public boolean updateKnownServerState(BlockPos pos, BlockState state) {
+    public boolean hasPendingUpdate(BlockPos pos, BlockState state) {
         return false;
     }
 
     @Override
-    public void endPredictionsUpTo(int maxProcessableSequence, ClientLevel world) {
+    public void processPendingUpdates(int maxProcessableSequence, ClientWorld world) {
     }
 
     @Override
-    public BlockStatePredictionHandler startPredicting() {
+    public PendingUpdateManager incrementSequence() {
         return this;
     }
 
@@ -56,12 +56,12 @@ public final class PendingUpdateManager1_18_2 extends BlockStatePredictionHandle
     }
 
     @Override
-    public int currentSequence() {
+    public int getSequence() {
         return 0;
     }
 
     @Override
-    public boolean isPredicting() {
+    public boolean hasPendingSequence() {
         return false;
     }
 

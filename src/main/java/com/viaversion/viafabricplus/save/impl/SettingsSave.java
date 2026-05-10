@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,12 +42,6 @@ public final class SettingsSave extends AbstractSave {
 
     @Override
     public void write(JsonObject object) {
-        writeSettings(object);
-
-        object.addProperty("selected-protocol-version", ProtocolTranslator.getTargetVersion().getName());
-    }
-
-    public void writeSettings(final JsonObject object) {
         for (SettingGroup group : SettingsManager.INSTANCE.getGroups()) {
             final JsonObject groupObject = new JsonObject();
             for (AbstractSetting<?> setting : group.getSettings()) {
@@ -56,6 +50,8 @@ public final class SettingsSave extends AbstractSave {
 
             object.add(AbstractSetting.mapTranslationKey(ChatUtil.uncoverTranslationKey(group.getName())), groupObject);
         }
+
+        object.addProperty("selected-protocol-version", ProtocolTranslator.getTargetVersion().getName());
     }
 
     @Override
@@ -97,10 +93,6 @@ public final class SettingsSave extends AbstractSave {
     }
 
     public static ProtocolVersion protocolVersionByName(final String name) {
-        if (name == null) {
-            return null;
-        }
-
         if (name.contains("Bedrock")) { // Always return latest bedrock since the version often changes
             return BedrockProtocolVersion.bedrockLatest;
         } else {

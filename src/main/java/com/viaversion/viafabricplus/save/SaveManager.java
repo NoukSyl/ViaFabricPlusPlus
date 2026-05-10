@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,10 +21,11 @@
 
 package com.viaversion.viafabricplus.save;
 
-import com.viaversion.viafabricplus.ViaFabricPlusImpl;
 import com.viaversion.viafabricplus.api.events.LoadingCycleCallback;
+import com.viaversion.viafabricplus.base.Events;
 import com.viaversion.viafabricplus.save.impl.AccountsSave;
 import com.viaversion.viafabricplus.save.impl.SettingsSave;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -39,12 +40,12 @@ public final class SaveManager {
     private AccountsSave accountsSave;
 
     public void init() {
-        ViaFabricPlusImpl.LOADING_CYCLE.invoker().onLoadCycle(LoadingCycleCallback.LoadingCycle.PRE_FILES_LOAD);
+        Events.LOADING_CYCLE.invoker().onLoadCycle(LoadingCycleCallback.LoadingCycle.PRE_FILES_LOAD);
 
         // Register saves
         add(
-            settingsSave = new SettingsSave(),
-            accountsSave = new AccountsSave()
+                settingsSave = new SettingsSave(),
+                accountsSave = new AccountsSave()
         );
 
         // Load save files
@@ -64,7 +65,7 @@ public final class SaveManager {
         for (AbstractSave save : saves) {
             save.postInit();
         }
-        ViaFabricPlusImpl.LOADING_CYCLE.invoker().onLoadCycle(LoadingCycleCallback.LoadingCycle.POST_FILES_LOAD);
+        Events.LOADING_CYCLE.invoker().onLoadCycle(LoadingCycleCallback.LoadingCycle.POST_FILES_LOAD);
     }
 
     public void add(final AbstractSave... saves) {

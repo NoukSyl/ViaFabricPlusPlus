@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,16 +22,17 @@
 package com.viaversion.viafabricplus.features.item.r1_14_4_enchantment_tooltip;
 
 import com.viaversion.viaversion.util.Key;
+import net.minecraft.enchantment.Enchantment;
+import net.minecraft.enchantment.Enchantments;
+import net.minecraft.registry.RegistryKey;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.Enchantments;
-import net.minecraft.resources.ResourceKey;
 
 public final class Enchantments1_14_4 {
 
-    private static final Map<String, ResourceKey<Enchantment>> ENCHANTMENT_REGISTRY = new HashMap<>();
+    private static final Map<String, RegistryKey<Enchantment>> ENCHANTMENT_REGISTRY = new HashMap<>();
 
     static {
         ENCHANTMENT_REGISTRY.put("protection", Enchantments.PROTECTION);
@@ -73,7 +74,10 @@ public final class Enchantments1_14_4 {
         ENCHANTMENT_REGISTRY.put("vanishing_curse", Enchantments.VANISHING_CURSE);
     }
 
-    public static Optional<ResourceKey<Enchantment>> getOrEmpty(final String identifier) {
+    public static Optional<RegistryKey<Enchantment>> getOrEmpty(final String identifier) {
+        if (identifier == null) {
+            return Optional.empty();
+        }
         return Optional.ofNullable(ENCHANTMENT_REGISTRY.get(Key.stripMinecraftNamespace(identifier)));
     }
 

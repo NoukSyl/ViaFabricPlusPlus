@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,48 +24,55 @@ package com.viaversion.viafabricplus.features.entity.attribute;
 import com.viaversion.viafabricplus.protocoltranslator.ProtocolTranslator;
 import com.viaversion.viaversion.api.protocol.version.ProtocolVersion;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.world.entity.ai.attributes.Attribute;
-import net.minecraft.world.entity.ai.attributes.AttributeInstance;
-import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraft.world.item.enchantment.Enchantments;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.core.Holder;
-import net.minecraft.tags.BlockTags;
+import net.minecraft.enchantment.Enchantment;
+import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.enchantment.Enchantments;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.attribute.EntityAttributes;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.entry.RegistryEntry;
+import net.minecraft.registry.tag.BlockTags;
+
+import java.util.Optional;
 
 public final class EnchantmentAttributesEmulation1_20_6 {
 
-    public static void init() {
-        ClientTickEvents.START_LEVEL_TICK.register(world -> {
+    static {
+        ClientTickEvents.START_WORLD_TICK.register(world -> {
             if (ProtocolTranslator.getTargetVersion().newerThan(ProtocolVersion.v1_20_5)) {
                 return;
             }
-
             // Update generic attributes for all entities
-            for (Entity entity : world.entitiesForRendering()) {
-                if (entity.isLocalInstanceAuthoritative() && entity instanceof LivingEntity livingEntity) {
-                    setAttribute(livingEntity, Attributes.WATER_MOVEMENT_EFFICIENCY, getEquipmentLevel(Enchantments.DEPTH_STRIDER, livingEntity) / 3D);
+            for (Entity entity : world.getEntities()) {
+                if (entity.isLogicalSideForUpdatingMovement() && entity instanceof LivingEntity livingEntity) {
+                    livingEntity.getAttributeInstance(EntityAttributes.WATER_MOVEMENT_EFFICIENCY).setBaseValue(getEquipmentLevel(Enchantments.DEPTH_STRIDER, livingEntity) / 3F);
                     setGenericMovementEfficiencyAttribute(livingEntity);
                 }
             }
 
-            // Update player-specific attributes for all players
-            for (Player player : world.players()) {
-                if (!player.isLocalInstanceAuthoritative()) {
+            // Update player specific attributes for all players
+            for (PlayerEntity player : world.getPlayers()) {
+                if (!player.isLogicalSideForUpdatingMovement()) {
                     continue;
                 }
-
                 final int efficiencyLevel = getEquipmentLevel(Enchantments.EFFICIENCY, player);
-                setAttribute(player, Attributes.MINING_EFFICIENCY, efficiencyLevel > 0 ? efficiencyLevel * efficiencyLevel + 1D : 0D);
-                setAttribute(player, Attributes.SNEAKING_SPEED, 0.3D + getEquipmentLevel(Enchantments.SWIFT_SNEAK, player) * 0.15D);
-                setAttribute(player, Attributes.SUBMERGED_MINING_SPEED, getEquipmentLevel(Enchantments.AQUA_AFFINITY, player) <= 0 ? 0.2D : 1D);
-                setAttribute(player, Attributes.ATTACK_KNOCKBACK, getEquipmentLevel(Enchantments.KNOCKBACK, player));
+                if (efficiencyLevel > 0) {
+                    player.getAttributeInstance(EntityAttributes.MINING_EFFICIENCY).setBaseValue(efficiencyLevel * efficiencyLevel + 1);
+                } else {
+                    player.getAttributeInstance(EntityAttributes.MINING_EFFICIENCY).setBaseValue(0);
+                }
+
+                player.getAttributeInstance(EntityAttributes.SNEAKING_SPEED).setBaseValue(0.3F + getEquipmentLevel(Enchantments.SWIFT_SNEAK, player) * 0.15F);
+                player.getAttributeInstance(EntityAttributes.SUBMERGED_MINING_SPEED).setBaseValue(getEquipmentLevel(Enchantments.AQUA_AFFINITY, player) <= 0 ? 0.2F : 1F);
             }
         });
+    }
+
+    public static void init() {
+        // Calls the static block
     }
 
     /**
@@ -73,18 +80,17 @@ public final class EnchantmentAttributesEmulation1_20_6 {
      * Called above just as a fallback if a mod accesses the raw attribute value directly.
      */
     public static void setGenericMovementEfficiencyAttribute(final LivingEntity entity) {
-        final boolean isOnSoulSpeedBlock = entity.level().getBlockState(entity.getBlockPosBelowThatAffectsMyMovement()).is(BlockTags.SOUL_SPEED_BLOCKS);
-        setAttribute(entity, Attributes.MOVEMENT_EFFICIENCY, isOnSoulSpeedBlock && getEquipmentLevel(Enchantments.SOUL_SPEED, entity) > 0 ? 1 : 0);
+        final boolean isOnSoulSpeedBlock = entity.getWorld().getBlockState(entity.getVelocityAffectingPos()).isIn(BlockTags.SOUL_SPEED_BLOCKS);
+        if (isOnSoulSpeedBlock && getEquipmentLevel(Enchantments.SOUL_SPEED, entity) > 0) {
+            entity.getAttributeInstance(EntityAttributes.MOVEMENT_EFFICIENCY).setBaseValue(1);
+        } else {
+            entity.getAttributeInstance(EntityAttributes.MOVEMENT_EFFICIENCY).setBaseValue(0);
+        }
     }
 
-    private static int getEquipmentLevel(final ResourceKey<Enchantment> enchantment, final LivingEntity livingEntity) {
-        return EnchantmentHelper.getEnchantmentLevel(livingEntity.level().registryAccess().getOrThrow(enchantment), livingEntity);
-    }
-
-    private static void setAttribute(final LivingEntity entity, final Holder<Attribute> attribute, final double value) {
-        final AttributeInstance attributeInstance = entity.getAttribute(attribute);
-        attributeInstance.removeModifiers(); // Minecraft is applying attribute modifiers in some situations, remove them before we set the base value
-        attributeInstance.setBaseValue(value);
+    private static int getEquipmentLevel(final RegistryKey<Enchantment> enchantment, final LivingEntity entity) {
+        final Optional<RegistryEntry.Reference<Enchantment>> enchantmentRef = entity.getWorld().getRegistryManager().getOrThrow(RegistryKeys.ENCHANTMENT).getOptional(enchantment);
+        return enchantmentRef.map(e -> EnchantmentHelper.getEquipmentLevel(e, entity)).orElse(0);
     }
 
 }

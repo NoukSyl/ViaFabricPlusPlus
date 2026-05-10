@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,25 +23,26 @@ package com.viaversion.viafabricplus.injection.mixin.features.networking.srv_res
 
 import com.viaversion.viafabricplus.protocoltranslator.ProtocolTranslator;
 import com.viaversion.viaversion.api.protocol.version.ProtocolVersion;
-import java.net.InetSocketAddress;
-import net.minecraft.client.multiplayer.resolver.ServerAddress;
+import net.minecraft.client.network.ServerAddress;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-@Mixin(targets = "net.minecraft.client.gui.screens.ConnectScreen$1")
+import java.net.InetSocketAddress;
+
+@Mixin(targets = "net.minecraft.client.gui.screen.multiplayer.ConnectScreen$1")
 public abstract class MixinConnectScreen_1 {
 
     @Final
     @Shadow
-    ServerAddress val$hostAndPort;
+    ServerAddress field_33737;
 
     @Redirect(method = "run", at = @At(value = "INVOKE", target = "Ljava/net/InetSocketAddress;getHostName()Ljava/lang/String;", remap = false))
     private String getRealAddress(InetSocketAddress instance) {
         if (ProtocolTranslator.getTargetVersion().olderThanOrEqualTo(ProtocolVersion.v1_17)) {
-            return val$hostAndPort.getHost();
+            return field_33737.getAddress();
         } else {
             return instance.getHostName();
         }
@@ -50,7 +51,7 @@ public abstract class MixinConnectScreen_1 {
     @Redirect(method = "run", at = @At(value = "INVOKE", target = "Ljava/net/InetSocketAddress;getPort()I", remap = false))
     private int getRealPort(InetSocketAddress instance) {
         if (ProtocolTranslator.getTargetVersion().olderThanOrEqualTo(ProtocolVersion.v1_17)) {
-            return val$hostAndPort.getPort();
+            return field_33737.getPort();
         } else {
             return instance.getPort();
         }

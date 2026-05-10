@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,17 +22,18 @@
 package com.viaversion.viafabricplus.screen.impl.realms;
 
 import com.viaversion.viafabricplus.screen.VFPScreen;
+import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.text.Text;
+
 import java.util.function.Consumer;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.network.chat.Component;
 
 public final class AcceptInvitationCodeScreen extends VFPScreen {
 
     private final Consumer<String> serviceHandler;
 
     public AcceptInvitationCodeScreen(Consumer<String> serviceHandler) {
-        super(Component.translatable("screen.viafabricplus.accept_invite"), true);
+        super(Text.translatable("screen.viafabricplus.accept_invite"), true);
 
         this.serviceHandler = serviceHandler;
     }
@@ -42,15 +43,15 @@ public final class AcceptInvitationCodeScreen extends VFPScreen {
         super.init();
         setupDefaultSubtitle();
 
-        final EditBox codeField = new EditBox(font, this.width / 2 - 100, this.height / 2 - 10, 200, 20, Component.empty());
-        codeField.setHint(Component.translatable("base.viafabricplus.code"));
+        final TextFieldWidget codeField = new TextFieldWidget(textRenderer, this.width / 2 - 100, this.height / 2 - 10, 200, 20, Text.empty());
+        codeField.setPlaceholder(Text.translatable("base.viafabricplus.code"));
 
-        this.addRenderableWidget(codeField);
+        this.addDrawableChild(codeField);
 
-        this.addRenderableWidget(Button.builder(Component.translatable("base.viafabricplus.accept"), button -> {
-            this.serviceHandler.accept(codeField.getValue());
-            onClose();
-        }).pos(this.width / 2 - Button.DEFAULT_WIDTH / 2, this.height / 2 + 20).build());
+        this.addDrawableChild(ButtonWidget.builder(Text.translatable("base.viafabricplus.accept"), button -> {
+            this.serviceHandler.accept(codeField.getText());
+            close();
+        }).position(this.width / 2 - ButtonWidget.DEFAULT_WIDTH / 2, this.height / 2 + 20).build());
     }
 
 }

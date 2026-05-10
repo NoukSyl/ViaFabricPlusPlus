@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,8 +22,8 @@
 package com.viaversion.viafabricplus.injection.mixin.features.limitation.max_chat_length;
 
 import com.viaversion.viafabricplus.features.limitation.max_chat_length.MaxChatLength;
-import net.minecraft.client.gui.screens.ChatScreen;
-import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screen.ChatScreen;
+import net.minecraft.client.gui.widget.TextFieldWidget;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -34,13 +34,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class MixinChatScreen {
 
     @Shadow
-    protected EditBox input;
+    protected TextFieldWidget chatField;
 
     @Inject(method = "init", at = @At("RETURN"))
     private void changeChatLength(CallbackInfo ci) {
-        if (this.input.getMaxLength() == MaxChatLength.MAX_CHAT_LENGTH_LATEST) {
-            this.input.setMaxLength(MaxChatLength.getChatLength());
-        }
+        this.chatField.setMaxLength(MaxChatLength.getChatLength());
     }
 
 }

@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 package com.viaversion.viafabricplus.features.networking.legacy_chat_signature;
 
 import com.mojang.authlib.yggdrasil.response.KeyPairResponse;
+
 import java.nio.ByteBuffer;
 
 /**
@@ -29,9 +30,9 @@ import java.nio.ByteBuffer;
  */
 
 public record KeyPairResponse1_19_0(
-    KeyPairResponse.KeyPair keyPair,
-    ByteBuffer publicKeySignatureV2,
-    ByteBuffer publicKeySignature /* removed in 1.20-rc1 */,
-    String expiresAt,
-    String refreshedAfter) {
+        KeyPairResponse.KeyPair keyPair,
+        ByteBuffer publicKeySignatureV2,
+        ByteBuffer publicKeySignature /* removed in 1.20-rc1 */,
+        String expiresAt,
+        String refreshedAfter) {
 }

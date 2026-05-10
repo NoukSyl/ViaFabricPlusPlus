@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,12 +31,22 @@ import com.viaversion.viaversion.api.protocol.packet.Direction;
 import com.viaversion.viaversion.api.protocol.packet.PacketWrapper;
 import com.viaversion.viaversion.api.protocol.packet.State;
 import com.viaversion.viaversion.api.protocol.version.ProtocolVersion;
+import com.viaversion.viaversion.api.type.Type;
 import com.viaversion.viaversion.api.type.Types;
+import com.viaversion.viaversion.api.type.types.version.Types1_20_5;
+import com.viaversion.viaversion.api.type.types.version.Types1_21;
+import com.viaversion.viaversion.api.type.types.version.Types1_21_2;
+import com.viaversion.viaversion.api.type.types.version.Types1_21_4;
 import com.viaversion.viaversion.protocols.v1_12to1_12_1.packet.ClientboundPackets1_12_1;
 import io.netty.buffer.Unpooled;
-import net.minecraft.client.Minecraft;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.item.ItemStack;
+import net.minecraft.network.RegistryByteBuf;
+import net.raphimc.vialegacy.api.LegacyProtocolVersion;
+import net.raphimc.vialegacy.protocol.beta.b1_8_0_1tor1_0_0_1.types.Typesb1_8_0_1;
+import net.raphimc.vialegacy.protocol.release.r1_2_4_5tor1_3_1_2.types.Types1_2_4;
+import net.raphimc.vialegacy.protocol.release.r1_4_2tor1_4_4_5.types.Types1_4_2;
+import net.raphimc.vialegacy.protocol.release.r1_7_6_10tor1_8.types.Types1_7_6;
 
 public final class ItemTranslator {
 
@@ -44,17 +54,17 @@ public final class ItemTranslator {
         final UserConnection connection = ProtocolTranslator.createDummyUserConnection(ProtocolTranslator.NATIVE_VERSION, targetVersion);
 
         try {
-            final RegistryFriendlyByteBuf buf = new RegistryFriendlyByteBuf(Unpooled.buffer(), Minecraft.getInstance().getConnection().registryAccess());
+            final RegistryByteBuf buf = new RegistryByteBuf(Unpooled.buffer(), MinecraftClient.getInstance().getNetworkHandler().getRegistryManager());
             buf.writeShort(0); // slot
-            ItemStack.OPTIONAL_UNTRUSTED_STREAM_CODEC.encode(buf, stack); // item
+            ItemStack.OPTIONAL_PACKET_CODEC.encode(buf, stack); // item
 
-            final PacketWrapper setCreativeModeSlot = PacketWrapper.create(ViaFabricPlusProtocol.INSTANCE.getSetCreativeModeSlot(), buf, connection);
+            final PacketWrapper setCreativeModeSlot = PacketWrapper.create(ViaFabricPlusProtocol.getSetCreativeModeSlot(), buf, connection);
             connection.getProtocolInfo().getPipeline().transform(Direction.SERVERBOUND, State.PLAY, setCreativeModeSlot);
 
             setCreativeModeSlot.read(Types.SHORT); // slot
-            return setCreativeModeSlot.read(ViaFabricPlusProtocol.INSTANCE.getServerboundItemType(targetVersion)); // item
+            return setCreativeModeSlot.read(getServerboundItemType(targetVersion)); // item
         } catch (Throwable t) {
-            ViaFabricPlusImpl.INSTANCE.getLogger().error("Error converting native item stack to ViaVersion {} item stack", targetVersion, t);
+            ViaFabricPlusImpl.INSTANCE.logger().error("Error converting native item stack to ViaVersion {} item stack", targetVersion, t);
             return null;
         }
     }
@@ -71,21 +81,67 @@ public final class ItemTranslator {
                 containerSetSlot.write(Types.BYTE, (byte) 0); // window id
             }
             containerSetSlot.write(Types.SHORT, (short) 0); // slot
-            containerSetSlot.write(ViaFabricPlusProtocol.INSTANCE.getClientboundItemType(sourceVersion), item != null ? item.copy() : null); // item
+            containerSetSlot.write(getClientboundItemType(sourceVersion), item != null ? item.copy() : null); // item
 
             containerSetSlot.resetReader();
             containerSetSlot.user().getProtocolInfo().getPipeline().transform(Direction.CLIENTBOUND, State.PLAY, containerSetSlot);
-            final RegistryFriendlyByteBuf buf = new RegistryFriendlyByteBuf(Unpooled.buffer(), Minecraft.getInstance().getConnection().registryAccess());
+            final RegistryByteBuf buf = new RegistryByteBuf(Unpooled.buffer(), MinecraftClient.getInstance().getNetworkHandler().getRegistryManager());
             containerSetSlot.setPacketType(null);
             containerSetSlot.writeToBuffer(buf);
 
             buf.readUnsignedByte(); // sync id
             buf.readVarInt(); // revision
             buf.readShort(); // slot
-            return ItemStack.OPTIONAL_STREAM_CODEC.decode(buf);
+            return ItemStack.OPTIONAL_PACKET_CODEC.decode(buf);
         } catch (Throwable t) {
-            ViaFabricPlusImpl.INSTANCE.getLogger().error("Error converting ViaVersion {} item to native item stack", sourceVersion, t);
+            ViaFabricPlusImpl.INSTANCE.logger().error("Error converting ViaVersion {} item to native item stack", sourceVersion, t);
             return ItemStack.EMPTY;
+        }
+    }
+
+    /**
+     * Gets the ViaVersion item type for the target version in the serverbound direction
+     *
+     * @param targetVersion The target version
+     * @return The ViaVersion item type
+     */
+    public static Type<Item> getServerboundItemType(final ProtocolVersion targetVersion) {
+        if (targetVersion.olderThanOrEqualTo(LegacyProtocolVersion.b1_8tob1_8_1)) {
+            return Typesb1_8_0_1.CREATIVE_ITEM;
+        } else {
+            return getClientboundItemType(targetVersion);
+        }
+    }
+
+    /**
+     * Gets the ViaVersion item type for the target version in the clientbound direction
+     *
+     * @param targetVersion The target version
+     * @return The ViaVersion item type
+     */
+    public static Type<Item> getClientboundItemType(final ProtocolVersion targetVersion) {
+        if (targetVersion.olderThanOrEqualTo(LegacyProtocolVersion.b1_8tob1_8_1)) {
+            return Types1_4_2.NBTLESS_ITEM;
+        } else if (targetVersion.olderThanOrEqualTo(LegacyProtocolVersion.r1_2_4tor1_2_5)) {
+            return Types1_2_4.NBT_ITEM;
+        } else if (targetVersion.olderThan(ProtocolVersion.v1_8)) {
+            return Types1_7_6.ITEM;
+        } else if (targetVersion.olderThan(ProtocolVersion.v1_13)) {
+            return Types.ITEM1_8;
+        } else if (targetVersion.olderThan(ProtocolVersion.v1_13_2)) {
+            return Types.ITEM1_13;
+        } else if (targetVersion.olderThan(ProtocolVersion.v1_20_2)) {
+            return Types.ITEM1_13_2;
+        } else if (targetVersion.olderThan(ProtocolVersion.v1_20_5)) {
+            return Types.ITEM1_20_2;
+        } else if (targetVersion.olderThan(ProtocolVersion.v1_21)) {
+            return Types1_20_5.ITEM;
+        } else if (targetVersion.olderThan(ProtocolVersion.v1_21_2)) {
+            return Types1_21.ITEM;
+        } else if (targetVersion.olderThan(ProtocolVersion.v1_21_4)) {
+            return Types1_21_2.ITEM;
+        } else {
+            return Types1_21_4.ITEM;
         }
     }
 

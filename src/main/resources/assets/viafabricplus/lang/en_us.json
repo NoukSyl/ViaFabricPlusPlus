@@ -1,5 +1,5 @@
 {
-  "modmenu.descriptionTranslation.viafabricplus": "Minecraft Fabric mod which allows you to join EVERY Minecraft server version (Classic, Alpha, Beta, Release, April Fools, Bedrock)",
+  "modmenu.descriptionTranslation.viafabricplus": "Fabric mod to connect to EVERY Minecraft server version (Release, Beta, Alpha, Classic, Snapshots, Bedrock) with QoL fixes to the gameplay",
 
   "base.viafabricplus.settings": "Settings",
   "base.viafabricplus.on": "On",
@@ -23,7 +23,7 @@
   "base.viafabricplus.kick": "Kick",
   "base.viafabricplus.cancel_and_notify": "Cancel and notify",
   "base.viafabricplus.detecting_server_version": "Detecting server version...",
-  "base.viafabricplus.this_will_require_a_restart": "Changing this setting will require a restart!",
+  "base.viafabricplus.this_will_require_a_restart": "This will require a restart!",
   "base.viafabricplus.none": "None",
   "base.viafabricplus.name": "Name",
   "base.viafabricplus.password": "Password",
@@ -48,6 +48,7 @@
   "screen.viafabricplus.accept_invite": "Accept Invite",
 
   "general_settings.viafabricplus.save_selected_protocol_version": "Save selected protocol version",
+  "general_settings.viafabricplus.extra_information_in_debug_hud": "Show extra information in Debug HUD",
   "general_settings.viafabricplus.show_classic_loading_progress": "Show classic loading progress in connect screen",
   "general_settings.viafabricplus.multiplayer_screen_button_orientation": "Multiplayer screen button orientation",
   "general_settings.viafabricplus.add_server_screen_button_orientation": "Add server screen button orientation",
@@ -58,11 +59,9 @@
   "general_settings.viafabricplus.load_skins_and_skulls_in_legacy_versions": "Load skins and skulls in legacy versions",
   "general_settings.viafabricplus.emulate_inventory_actions_in_alpha_versions": "Emulate inventory actions in alpha versions",
   "general_settings.viafabricplus.save_scroll_position_in_slot_screens": "Save scroll position in slot screens",
-  "general_settings.viafabricplus.experimental_block_connections": "Experimental block connections",
 
   "bedrock_settings.viafabricplus.click_to_set_bedrock_account": "Click to set account for Bedrock Edition",
   "bedrock_settings.viafabricplus.replace_default_port": "Replace default port in server list",
-  "bedrock_settings.viafabricplus.experimental_features": "Enable experimental features (may be unstable)",
 
   "debug_settings.viafabricplus.queue_config_packets": "Queue config packets",
   "debug_settings.viafabricplus.disable_sequencing": "Disable sequencing",
@@ -77,12 +76,8 @@
   "debug_settings.viafabricplus.hide_modern_jigsaw_screen_features": "Hide modern Jigsaw screen features",
   "debug_settings.viafabricplus.emulate_armor_hud": "Emulate armor HUD",
   "debug_settings.viafabricplus.hide_modern_command_block_screen_features": "Hide modern command block screen features",
-  "debug_settings.viafabricplus.legacy_crop_outlines": "Legacy crop outlines",
   "debug_settings.viafabricplus.disable_server_pinging": "Disable server pinging",
   "debug_settings.viafabricplus.filter_non_existing_glyphs": "Filter non existing glyphs",
-  "debug_settings.viafabricplus.legacy_pane_outlines": "Legacy pane outlines",
-  "debug_settings.viafabricplus.serverside_place_sounds": "Serverside block/item place sounds",
-  "debug_settings.viafabricplus.remove_server_description_sanitize": "Remove server description sanitize",
 
   "authentication_settings.viafabricplus.use_beta_craft_authentication": "Use BetaCraft authentication",
   "authentication_settings.viafabricplus.verify_session_for_online_mode": "Verify session for online mode servers",
@@ -112,7 +107,6 @@
   "visual_settings.viafabricplus.sneak_instantly": "Sneak instantly",
   "visual_settings.viafabricplus.lock_blocking_arm_rotation": "Lock third-person arm rotation whilst blocking",
   "visual_settings.viafabricplus.change_body_rotation_interpolation": "Change body rotation interpolation",
-  "visual_settings.viafabricplus.potion_enchantment_glint": "Show enchantment glint on potions",
 
   "force_version.viafabricplus.title": "Please select the version with which the server should be pinged/connected",
 
@@ -154,17 +148,12 @@
   "classic4j_library.viafabricplus.error.verification": "User hasn't verified their email address yet.",
   "classic4j_library.viafabricplus.error.logincode": "Multi-factor authentication requested. Please check your email.",
 
-  "minecraftauth_library.viafabricplus.msatoken": "Obtained Microsoft Access Token",
-  "minecraftauth_library.viafabricplus.xbldevicetoken": "Obtained Xbox Live Device Token",
-  "minecraftauth_library.viafabricplus.xblusertoken": "Obtained Xbox Live User Token",
-  "minecraftauth_library.viafabricplus.xbltitletoken": "Obtained Xbox Live Title Token",
-  "minecraftauth_library.viafabricplus.bedrockxststoken": "Obtained Bedrock XSTS Token",
-  "minecraftauth_library.viafabricplus.playfabxststoken": "Obtained PlayFab XSTS Token",
-  "minecraftauth_library.viafabricplus.realmsxststoken": "Obtained Realms XSTS Token",
-  "minecraftauth_library.viafabricplus.playfabtoken": "Obtained PlayFab Token",
-  "minecraftauth_library.viafabricplus.minecraftsession": "Obtained Minecraft Session",
-  "minecraftauth_library.viafabricplus.minecraftmultiplayertoken": "Obtained Minecraft Multiplayer Token",
-  "minecraftauth_library.viafabricplus.minecraftcertificatechain": "Obtained Minecraft Certificate Chain",
+  "minecraftauth_library.viafabricplus.xbldevicetoken": "Authenticating device with Xbox Live...",
+  "minecraftauth_library.viafabricplus.xblsisuauthentication": "Authenticating with Xbox Live using SISU...",
+  "minecraftauth_library.viafabricplus.mcchain": "Authenticating with Minecraft Services...",
+  "minecraftauth_library.viafabricplus.xblxststoken": "Requesting XSTS Token...",
+  "minecraftauth_library.viafabricplus.playfabtoken": "Authenticating with PlayFab...",
+  "minecraftauth_library.viafabricplus.realmsxsts": "Requesting Realms XSTS Token...",
 
   "bedrock_realms.viafabricplus.warning": "This feature requires a Bedrock Edition account to be set in the settings!",
   "bedrock_realms.viafabricplus.availability_check": "Checking availability...",
@@ -175,6 +164,5 @@
   "bedrock_realms.viafabricplus.leave": "Leave realm",
   "bedrock_realms.viafabricplus.invite": "Accept invite code",
   "bedrock_realms.viafabricplus.expired": "The Realm is expired",
-  "bedrock_realms.viafabricplus.incompatible": "The Realms Minecraft version is either too old or too new",
-  "bedrock_realms.viafabricplus.unsupported_protocol": "Realms via the %s protocol is not supported. You can't join this realm."
+  "bedrock_realms.viafabricplus.incompatible": "The Realms Minecraft version is either too old or too new"
 }

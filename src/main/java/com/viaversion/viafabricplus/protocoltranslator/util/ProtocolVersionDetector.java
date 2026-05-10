@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 package com.viaversion.viafabricplus.protocoltranslator.util;
 
 import com.google.gson.JsonObject;
+import com.viaversion.vialoader.util.ProtocolVersionList;
 import com.viaversion.viaversion.api.protocol.version.ProtocolVersion;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -29,9 +30,9 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import net.minecraft.client.multiplayer.resolver.ServerAddress;
-import net.minecraft.network.protocol.handshake.ClientIntent;
-import net.minecraft.ChatFormatting;
+import net.minecraft.client.network.ServerAddress;
+import net.minecraft.network.packet.c2s.handshake.ConnectionIntent;
+import net.minecraft.util.Formatting;
 
 import static com.viaversion.viafabricplus.save.AbstractSave.GSON;
 
@@ -51,13 +52,13 @@ public final class ProtocolVersionDetector {
      */
     public static ProtocolVersion get(final ServerAddress serverAddress, final InetSocketAddress socketAddress, final ProtocolVersion clientVersion) throws Exception {
         try (
-                final Socket socket = new Socket(serverAddress.getHost(), serverAddress.getPort());
+            final Socket socket = new Socket(serverAddress.getAddress(), serverAddress.getPort());
 
-                final DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
-                final DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
+            final DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
+            final DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
 
-                final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                final DataOutputStream handshakePacket = new DataOutputStream(byteArrayOutputStream)
+            final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            final DataOutputStream handshakePacket = new DataOutputStream(byteArrayOutputStream)
         ) {
             socket.setTcpNoDelay(true);
             socket.setSoTimeout(TIMEOUT);
@@ -67,13 +68,13 @@ public final class ProtocolVersionDetector {
 
             writeVarInt(handshakePacket, clientVersion.getOriginalVersion());
             if (clientVersion.olderThanOrEqualTo(ProtocolVersion.v1_17)) {
-                writeString(handshakePacket, serverAddress.getHost());
+                writeVarString(handshakePacket, serverAddress.getAddress());
                 handshakePacket.writeShort(serverAddress.getPort());
             } else {
-                writeString(handshakePacket, socketAddress.getHostString());
+                writeVarString(handshakePacket, socketAddress.getHostString());
                 handshakePacket.writeShort(socketAddress.getPort());
             }
-            writeVarInt(handshakePacket, ClientIntent.STATUS.id());
+            writeVarInt(handshakePacket, ConnectionIntent.STATUS.getId());
 
             writeVarInt(dataOutputStream, byteArrayOutputStream.size());
             dataOutputStream.write(byteArrayOutputStream.toByteArray());
@@ -92,7 +93,7 @@ public final class ProtocolVersionDetector {
                 throw new IllegalStateException("Invalid packet ID");
             }
 
-            final String response = readString(dataInputStream);
+            final String response = readVarString(dataInputStream);
             final JsonObject object = GSON.fromJson(response, JsonObject.class);
             if (!object.has("version")) {
                 throw new IllegalStateException("Invalid ping response");
@@ -117,7 +118,7 @@ public final class ProtocolVersionDetector {
 
             // Fallback with the name
             final String name = version.get("name").getAsString();
-            for (final ProtocolVersion protocol : ProtocolVersion.getReversedProtocols()) {
+            for (final ProtocolVersion protocol : ProtocolVersionList.getProtocolsNewToOld()) {
                 for (final String includedVersion : protocol.getIncludedVersions()) {
                     if (name.contains(includedVersion)) {
                         return protocol;
@@ -125,7 +126,7 @@ public final class ProtocolVersionDetector {
                 }
             }
 
-            throw new RuntimeException("Unable to detect the server version\nServer sent an invalid protocol id: " + serverAddress + " (" + name + ChatFormatting.RESET + ")");
+            throw new RuntimeException("Unable to detect the server version\nServer sent an invalid protocol id: " + serverAddress + " (" + name + Formatting.RESET + ")");
         }
     }
 
@@ -144,7 +145,7 @@ public final class ProtocolVersionDetector {
         return i;
     }
 
-    private static String readString(final DataInputStream in) throws IOException {
+    private static String readVarString(final DataInputStream in) throws IOException {
         final int length = readVarInt(in);
         if (length > Short.MAX_VALUE * 4) {
             throw new IOException("Cannot receive string longer than Short.MAX_VALUE * 4 bytes (got " + length + " bytes)");
@@ -171,7 +172,7 @@ public final class ProtocolVersionDetector {
         out.writeByte(value);
     }
 
-    private static void writeString(final DataOutputStream out, final String value) throws IOException {
+    private static void writeVarString(final DataOutputStream out, final String value) throws IOException {
         final byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
         writeVarInt(out, bytes.length);
         out.write(bytes);

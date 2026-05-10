@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,10 +23,10 @@ package com.viaversion.viafabricplus.injection.mixin.features.item.interaction;
 
 import com.viaversion.viafabricplus.protocoltranslator.ProtocolTranslator;
 import com.viaversion.viaversion.api.protocol.version.ProtocolVersion;
-import net.minecraft.world.item.context.UseOnContext;
-import net.minecraft.world.item.LeadItem;
-import net.minecraft.tags.BlockTags;
-import net.minecraft.world.InteractionResult;
+import net.minecraft.item.ItemUsageContext;
+import net.minecraft.item.LeadItem;
+import net.minecraft.registry.tag.BlockTags;
+import net.minecraft.util.ActionResult;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -35,11 +35,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(LeadItem.class)
 public abstract class MixinLeadItem {
 
-    @Inject(method = "useOn", at = @At("RETURN"), cancellable = true)
-    private void swingHand(UseOnContext context, CallbackInfoReturnable<InteractionResult> cir) {
+    @Inject(method = "useOnBlock", at = @At("RETURN"), cancellable = true)
+    private void swingHand(ItemUsageContext context, CallbackInfoReturnable<ActionResult> cir) {
         if (ProtocolTranslator.getTargetVersion().olderThanOrEqualTo(ProtocolVersion.v1_21)) {
-            if (context.getLevel().getBlockState(context.getClickedPos()).is(BlockTags.FENCES)) {
-                cir.setReturnValue(InteractionResult.SUCCESS);
+            if (context.getWorld().getBlockState(context.getBlockPos()).isIn(BlockTags.FENCES)) {
+                cir.setReturnValue(ActionResult.SUCCESS);
             }
         }
     }

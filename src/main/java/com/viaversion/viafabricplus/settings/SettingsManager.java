@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,13 +21,14 @@
 
 package com.viaversion.viafabricplus.settings;
 
-import com.viaversion.viafabricplus.ViaFabricPlusImpl;
 import com.viaversion.viafabricplus.api.events.LoadingCycleCallback;
 import com.viaversion.viafabricplus.api.settings.SettingGroup;
+import com.viaversion.viafabricplus.base.Events;
 import com.viaversion.viafabricplus.settings.impl.AuthenticationSettings;
 import com.viaversion.viafabricplus.settings.impl.BedrockSettings;
 import com.viaversion.viafabricplus.settings.impl.DebugSettings;
 import com.viaversion.viafabricplus.settings.impl.GeneralSettings;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -39,16 +40,16 @@ public final class SettingsManager {
     private final List<SettingGroup> groups = new ArrayList<>();
 
     public void init() {
-        ViaFabricPlusImpl.LOADING_CYCLE.invoker().onLoadCycle(LoadingCycleCallback.LoadingCycle.PRE_SETTINGS_LOAD);
+        Events.LOADING_CYCLE.invoker().onLoadCycle(LoadingCycleCallback.LoadingCycle.PRE_SETTINGS_LOAD);
 
         addGroup(
-            GeneralSettings.INSTANCE,
-            BedrockSettings.INSTANCE,
-            AuthenticationSettings.INSTANCE,
-            DebugSettings.INSTANCE
+                GeneralSettings.INSTANCE,
+                BedrockSettings.INSTANCE,
+                AuthenticationSettings.INSTANCE,
+                DebugSettings.INSTANCE
         );
 
-        ViaFabricPlusImpl.LOADING_CYCLE.invoker().onLoadCycle(LoadingCycleCallback.LoadingCycle.POST_SETTINGS_LOAD);
+        Events.LOADING_CYCLE.invoker().onLoadCycle(LoadingCycleCallback.LoadingCycle.POST_SETTINGS_LOAD);
     }
 
     public void addGroup(final SettingGroup... groups) {

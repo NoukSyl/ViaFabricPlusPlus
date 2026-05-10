@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 package com.viaversion.viafabricplus.injection.mixin.features.large_container;
 
 import com.llamalad7.mixinextras.sugar.Local;
-import com.viaversion.viafabricplus.util.network.SyncTasks;
+import com.viaversion.viafabricplus.base.sync_tasks.SyncTasks;
 import com.viaversion.viafabricplus.protocoltranslator.translator.TextComponentTranslator;
 import com.viaversion.viaversion.api.minecraft.item.Item;
 import com.viaversion.viaversion.api.protocol.packet.PacketWrapper;
@@ -36,13 +36,13 @@ import com.viaversion.viaversion.protocols.v1_13_2to1_14.packet.ClientboundPacke
 import com.viaversion.viaversion.protocols.v1_13_2to1_14.packet.ServerboundPackets1_14;
 import com.viaversion.viaversion.protocols.v1_13_2to1_14.rewriter.ItemPacketRewriter1_14;
 import com.viaversion.viaversion.rewriter.ItemRewriter;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.inventory.ContainerScreen;
-import net.minecraft.world.SimpleContainer;
-import net.minecraft.world.inventory.ChestMenu;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.ComponentSerialization;
-import net.minecraft.util.Mth;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.ingame.GenericContainerScreen;
+import net.minecraft.inventory.SimpleInventory;
+import net.minecraft.screen.GenericContainerScreenHandler;
+import net.minecraft.text.Text;
+import net.minecraft.text.TextCodecs;
+import net.minecraft.util.math.MathHelper;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -66,16 +66,16 @@ public abstract class MixinItemPacketRewriter1_14 extends ItemRewriter<Clientbou
             ci.cancel();
 
             final String uuid = SyncTasks.executeSyncTask(data -> {
-                final Minecraft mc = Minecraft.getInstance();
+                final MinecraftClient mc = MinecraftClient.getInstance();
 
                 try {
                     final int syncId = data.readUnsignedByte();
                     final int size = data.readUnsignedByte();
-                    final Component mcTitle = ComponentSerialization.TRUSTED_STREAM_CODEC.decode(data);
+                    final Text mcTitle = TextCodecs.UNLIMITED_REGISTRY_PACKET_CODEC.decode(data);
 
-                    final ChestMenu screenHandler = new ChestMenu(null, syncId, mc.player.getInventory(), new SimpleContainer(size), Mth.ceil(size / 9F));
-                    mc.player.containerMenu = screenHandler;
-                    mc.setScreen(new ContainerScreen(screenHandler, mc.player.getInventory(), mcTitle));
+                    final GenericContainerScreenHandler screenHandler = new GenericContainerScreenHandler(null, syncId, mc.player.getInventory(), new SimpleInventory(size), MathHelper.ceil(size / 9F));
+                    mc.player.currentScreenHandler = screenHandler;
+                    mc.setScreen(new GenericContainerScreen(screenHandler, mc.player.getInventory(), mcTitle));
                 } catch (Throwable t) {
                     throw new RuntimeException("Failed to handle OpenWindow packet data", t);
                 }

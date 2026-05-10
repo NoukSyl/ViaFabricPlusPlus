@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,14 +21,14 @@
 
 package com.viaversion.viafabricplus.protocoltranslator.impl.command.classic;
 
-import com.viaversion.viafabricplus.injection.access.core.IExtensionProtocolMetadataStorage;
-import com.viaversion.viafabricplus.protocoltranslator.impl.command.VFPSubCommand;
+import com.viaversion.viafabricplus.injection.access.base.IExtensionProtocolMetadataStorage;
+import com.viaversion.viafabricplus.protocoltranslator.impl.command.VFPViaSubCommand;
 import com.viaversion.viaversion.api.command.ViaCommandSender;
-import net.minecraft.ChatFormatting;
+import net.minecraft.util.Formatting;
 import net.raphimc.vialegacy.api.LegacyProtocolVersion;
 import net.raphimc.vialegacy.protocol.classic.c0_30cpetoc0_28_30.storage.ExtensionProtocolMetadataStorage;
 
-public final class ListExtensionsCommand implements VFPSubCommand {
+public final class ListExtensionsCommand implements VFPViaSubCommand {
 
     @Override
     public String name() {
@@ -43,11 +43,11 @@ public final class ListExtensionsCommand implements VFPSubCommand {
     @Override
     public boolean execute(ViaCommandSender sender, String[] args) {
         if (getUser() == null || !getUser().has(ExtensionProtocolMetadataStorage.class)) {
-            sendMessage(sender, ChatFormatting.RED + "Only for " + LegacyProtocolVersion.c0_30cpe.getName());
+            sendMessage(sender, Formatting.RED + "Only for " + LegacyProtocolVersion.c0_30cpe.getName());
             return true;
         }
         ((IExtensionProtocolMetadataStorage) getUser().get(ExtensionProtocolMetadataStorage.class)).viaFabricPlus$getServerExtensions().forEach((extension, version) -> {
-            sendMessage(sender, ChatFormatting.GREEN + extension.getName() + ChatFormatting.GOLD + " v" + version);
+            sendMessage(sender, Formatting.GREEN + extension.getName() + Formatting.GOLD + " v" + version);
         });
         return true;
     }

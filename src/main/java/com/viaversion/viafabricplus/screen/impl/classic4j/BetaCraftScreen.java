@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,21 +24,20 @@ package com.viaversion.viafabricplus.screen.impl.classic4j;
 import com.viaversion.viafabricplus.screen.VFPList;
 import com.viaversion.viafabricplus.screen.VFPListEntry;
 import com.viaversion.viafabricplus.screen.VFPScreen;
-import com.viaversion.viafabricplus.screen.impl.settings.TitleEntry;
-import com.viaversion.viafabricplus.util.network.ConnectionUtil;
-import de.florianreuth.classic4j.BetaCraftHandler;
-import de.florianreuth.classic4j.model.betacraft.BCServerInfo;
-import de.florianreuth.classic4j.model.betacraft.BCServerList;
-import de.florianreuth.classic4j.model.betacraft.BCVersionCategory;
-import java.util.List;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.screens.ConfirmLinkScreen;
-import net.minecraft.network.chat.Component;
-import net.minecraft.ChatFormatting;
+import com.viaversion.viafabricplus.screen.impl.settings.TitleRenderer;
+import com.viaversion.viafabricplus.util.ConnectionUtil;
+import de.florianmichael.classic4j.BetaCraftHandler;
+import de.florianmichael.classic4j.model.betacraft.BCServerInfoSpec;
+import de.florianmichael.classic4j.model.betacraft.BCServerList;
+import de.florianmichael.classic4j.model.betacraft.BCVersionCategory;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.font.TextRenderer;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.screen.ConfirmLinkScreen;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 
-import static com.viaversion.viafabricplus.screen.VFPListEntry.SLOT_MARGIN;
+import java.util.List;
 
 public final class BetaCraftScreen extends VFPScreen {
 
@@ -58,18 +57,16 @@ public final class BetaCraftScreen extends VFPScreen {
             createView();
             return;
         }
-        setupSubtitle(Component.translatable("betacraft.viafabricplus.loading"));
-        BetaCraftHandler.requestServerList(serverList -> {
+        setupSubtitle(Text.translatable("betacraft.viafabricplus.loading"));
+        BetaCraftHandler.requestV2ServerList(serverList -> {
             BetaCraftScreen.SERVER_LIST = serverList;
             createView();
         }, throwable -> showErrorScreen(BetaCraftScreen.INSTANCE.getTitle(), throwable, this));
     }
 
     private void createView() {
-        this.setupSubtitle(Component.nullToEmpty(BETA_CRAFT_SERVER_LIST_URL), ConfirmLinkScreen.confirmLink(this, BETA_CRAFT_SERVER_LIST_URL));
-
-        final int entryHeight = (font.lineHeight + 2) * 3; // title is 2
-        this.addRenderableWidget(new SlotList(this.minecraft, width, height, 2 * SLOT_MARGIN + entryHeight, -5, entryHeight));
+        this.setupSubtitle(Text.of(BETA_CRAFT_SERVER_LIST_URL), ConfirmLinkScreen.opening(this, BETA_CRAFT_SERVER_LIST_URL));
+        this.addDrawableChild(new SlotList(this.client, width, height, 3 + 3 /* start offset */ + (textRenderer.fontHeight + 2) * 3 /* title is 2 */, -5, (textRenderer.fontHeight + 2) * 3));
 
         this.addRefreshButton(() -> SERVER_LIST = null);
     }
@@ -82,19 +79,19 @@ public final class BetaCraftScreen extends VFPScreen {
     public static class SlotList extends VFPList {
         private static double scrollAmount;
 
-        public SlotList(Minecraft minecraftClient, int width, int height, int top, int bottom, int entryHeight) {
+        public SlotList(MinecraftClient minecraftClient, int width, int height, int top, int bottom, int entryHeight) {
             super(minecraftClient, width, height, top, bottom, entryHeight);
             if (SERVER_LIST == null) {
                 return;
             }
 
             for (BCVersionCategory value : BCVersionCategory.values()) {
-                final List<BCServerInfo> servers = SERVER_LIST.serversOfVersionCategory(value);
+                final List<BCServerInfoSpec> servers = SERVER_LIST.serversOfVersionCategory(value);
                 if (servers.isEmpty()) {
                     continue;
                 }
-                addEntry(new TitleEntry(Component.nullToEmpty(value.name())));
-                for (BCServerInfo server : servers) {
+                addEntry(new TitleRenderer(Text.of(value.name())));
+                for (BCServerInfoSpec server : servers) {
                     addEntry(new ServerSlot(server));
                 }
             }
@@ -114,15 +111,15 @@ public final class BetaCraftScreen extends VFPScreen {
     }
 
     public static class ServerSlot extends VFPListEntry {
-        private final BCServerInfo server;
+        private final BCServerInfoSpec server;
 
-        public ServerSlot(BCServerInfo server) {
+        public ServerSlot(BCServerInfoSpec server) {
             this.server = server;
         }
 
         @Override
-        public Component getNarration() {
-            return Component.nullToEmpty(server.name());
+        public Text getNarration() {
+            return Text.of(server.name());
         }
 
         @Override
@@ -132,18 +129,15 @@ public final class BetaCraftScreen extends VFPScreen {
         }
 
         @Override
-        public void mappedRender(GuiGraphicsExtractor context, int x, int y, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
-            final Font textRenderer = Minecraft.getInstance().font;
-            context.centeredText(textRenderer, server.name() + ChatFormatting.DARK_GRAY + " [" + server.gameVersion() + "]", entryWidth / 2, entryHeight / 2 - textRenderer.lineHeight / 2, -1);
+        public void mappedRender(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
+            final TextRenderer textRenderer = MinecraftClient.getInstance().textRenderer;
+            context.drawCenteredTextWithShadow(textRenderer, server.name() + Formatting.DARK_GRAY + " [" + server.gameVersion() + "]", entryWidth / 2, entryHeight / 2 - textRenderer.fontHeight / 2, -1);
 
             if (server.onlineMode()) {
-                context.text(textRenderer, Component.translatable("base.viafabricplus.online_mode").withStyle(ChatFormatting.GREEN), 1, 1, -1);
+                context.drawTextWithShadow(textRenderer, Text.translatable("base.viafabricplus.online_mode").formatted(Formatting.GREEN), 1, 1, -1);
             }
-            final String serverIP = server.socket();
             final String playerText = server.playerCount() + "/" + server.playerLimit();
-
-            context.text(textRenderer, Component.literal(serverIP).withStyle(ChatFormatting.DARK_GRAY), entryWidth - textRenderer.width(serverIP) - 1, entryHeight - textRenderer.lineHeight - 1, -1);
-            context.text(textRenderer, playerText, entryWidth - textRenderer.width(playerText) - 1, 1, -1);
+            context.drawTextWithShadow(textRenderer, playerText, entryWidth - textRenderer.getWidth(playerText) - 4 /* magic value from line 152 */ - 1, 1, -1);
         }
     }
 

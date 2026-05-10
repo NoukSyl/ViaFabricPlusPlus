@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,12 +30,12 @@ public final class ViaFabricPlusPickItemProvider extends PickItemProvider {
 
     @Override
     public void pickItemFromBlock(UserConnection connection, BlockPosition blockPosition, boolean includeData) {
-        NotificationUtil.warnIncompatibilityPacket("1.21.4", "PICK_ITEM_FROM_BLOCK", "Minecraft#pickBlock");
+        NotificationUtil.warnIncompatibilityPacket("1.21.4", "PICK_ITEM_FROM_BLOCK", "MinecraftClient#doItemPick", "Minecraft#pickBlock");
     }
 
     @Override
     public void pickItemFromEntity(UserConnection connection, int entityId, boolean includeData) {
-        NotificationUtil.warnIncompatibilityPacket("1.21.4", "PICK_ITEM_FROM_ENTITY", "Minecraft#pickBlock");
+        NotificationUtil.warnIncompatibilityPacket("1.21.4", "PICK_ITEM_FROM_ENTITY", "MinecraftClient#doItemPick", "Minecraft#pickBlock");
     }
 
 }

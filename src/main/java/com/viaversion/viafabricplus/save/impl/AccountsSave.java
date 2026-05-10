@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,15 +24,16 @@ package com.viaversion.viafabricplus.save.impl;
 import com.google.gson.JsonObject;
 import com.viaversion.viafabricplus.ViaFabricPlusImpl;
 import com.viaversion.viafabricplus.save.AbstractSave;
-import de.florianreuth.classic4j.model.classicube.account.CCAccount;
+import com.viaversion.viafabricplus.settings.impl.BedrockSettings;
+import de.florianmichael.classic4j.model.classicube.account.CCAccount;
 import net.raphimc.minecraftauth.MinecraftAuth;
-import net.raphimc.minecraftauth.bedrock.BedrockAuthManager;
-import net.raphimc.minecraftauth.util.MinecraftAuth4To5Migrator;
-import net.raphimc.viabedrock.protocol.data.ProtocolConstants;
+import net.raphimc.minecraftauth.step.bedrock.session.StepFullBedrockSession;
+import net.raphimc.minecraftauth.step.msa.StepMsaToken;
+import net.raphimc.minecraftauth.step.xbl.session.StepInitialXblSession;
 
 public final class AccountsSave extends AbstractSave {
 
-    private BedrockAuthManager bedrockAccount;
+    private StepFullBedrockSession.FullBedrockSession bedrockAccount;
     private CCAccount classicubeAccount;
 
     public AccountsSave() {
@@ -42,7 +43,7 @@ public final class AccountsSave extends AbstractSave {
     @Override
     public void write(JsonObject object) {
         if (bedrockAccount != null) {
-            object.add("bedrockV3", BedrockAuthManager.toJson(bedrockAccount));
+            object.add("bedrockV2", BedrockSettings.BEDROCK_DEVICE_CODE_LOGIN.toJson(bedrockAccount));
         }
         if (classicubeAccount != null) {
             object.add("classicube", classicubeAccount.asJson());
@@ -51,12 +52,15 @@ public final class AccountsSave extends AbstractSave {
 
     @Override
     public void read(JsonObject object) {
-        handleAccount("bedrockV2", object, account -> {
-            final JsonObject newAccount = MinecraftAuth4To5Migrator.migrateBedrockSave(account);
-            bedrockAccount = BedrockAuthManager.fromJson(MinecraftAuth.createHttpClient(), ProtocolConstants.BEDROCK_VERSION_NAME, newAccount);
-            bedrockAccount.getMinecraftMultiplayerToken().refreshIfExpired();
+        handleAccount("bedrock", object, account -> {
+            // Use old login flow, then get refresh token and login via new flow
+            final StepFullBedrockSession.FullBedrockSession oldSession = MinecraftAuth.BEDROCK_DEVICE_CODE_LOGIN.fromJson(account);
+            final StepInitialXblSession.InitialXblSession xblSession = oldSession.getMcChain().getXblXsts().getInitialXblSession();
+
+            final StepMsaToken.RefreshToken refreshToken = new StepMsaToken.RefreshToken(xblSession.getMsaToken().getRefreshToken());
+            bedrockAccount = BedrockSettings.BEDROCK_DEVICE_CODE_LOGIN.getFromInput(MinecraftAuth.createHttpClient(), refreshToken);
         });
-        handleAccount("bedrockV3", object, account -> bedrockAccount = BedrockAuthManager.fromJson(MinecraftAuth.createHttpClient(), ProtocolConstants.BEDROCK_VERSION_NAME, account));
+        handleAccount("bedrockV2", object, account -> bedrockAccount = BedrockSettings.BEDROCK_DEVICE_CODE_LOGIN.fromJson(account));
         handleAccount("classicube", object, account -> classicubeAccount = CCAccount.fromJson(account));
     }
 
@@ -65,16 +69,28 @@ public final class AccountsSave extends AbstractSave {
             try {
                 output.accept(object.get(name).getAsJsonObject());
             } catch (Exception e) {
-                ViaFabricPlusImpl.INSTANCE.getLogger().error("Failed to read {} account!", name, e);
+                ViaFabricPlusImpl.INSTANCE.logger().error("Failed to read {} account!", name, e);
             }
         }
     }
 
-    public BedrockAuthManager getBedrockAccount() {
+    public StepFullBedrockSession.FullBedrockSession refreshAndGetBedrockAccount() {
+        if (bedrockAccount == null) {
+            return null;
+        }
+        try {
+            bedrockAccount = BedrockSettings.BEDROCK_DEVICE_CODE_LOGIN.refresh(MinecraftAuth.createHttpClient(), bedrockAccount);
+        } catch (Throwable t) {
+            throw new RuntimeException("Failed to refresh Bedrock chain data. Please re-login to Bedrock!", t);
+        }
         return bedrockAccount;
     }
 
-    public void setBedrockAccount(BedrockAuthManager bedrockAccount) {
+    public StepFullBedrockSession.FullBedrockSession getBedrockAccount() {
+        return bedrockAccount;
+    }
+
+    public void setBedrockAccount(StepFullBedrockSession.FullBedrockSession bedrockAccount) {
         this.bedrockAccount = bedrockAccount;
     }
 

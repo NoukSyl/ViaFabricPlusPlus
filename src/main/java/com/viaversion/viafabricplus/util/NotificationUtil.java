@@ -1,9 +1,9 @@
 /*
  * This file is part of ViaFabricPlus - https://github.com/ViaVersion/ViaFabricPlus
- * Copyright (C) 2021-2026 the original authors
- *                         - Florian Reuth <git@florianreuth.de>
+ * Copyright (C) 2021-2025 the original authors
+ *                         - FlorianMichael/EnZaXD <florian.michael07@gmail.com>
  *                         - RK_01/RaphiMC
- * Copyright (C) 2023-2026 ViaVersion and contributors
+ * Copyright (C) 2023-2025 ViaVersion and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,20 +23,15 @@ package com.viaversion.viafabricplus.util;
 
 import com.viaversion.viafabricplus.ViaFabricPlusImpl;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
 
 public final class NotificationUtil {
 
-    public static void warnIncompatibilityPacket(final String version, final String packet, final @Nullable String methodName) {
-        final Logger logger = ViaFabricPlusImpl.INSTANCE.getLogger();
+    public static void warnIncompatibilityPacket(final String version, final String packet, final String yarnMethod, final String mojmapMethod) {
+        final Logger logger = ViaFabricPlusImpl.INSTANCE.logger();
         logger.error("===========================================");
-        logger.error("The {} packet (>= {}) could not be remapped without breaking content!", packet, version);
+        logger.error("The " + packet + " packet (>= " + version + ") could not be remapped without breaking content!");
         logger.error("Try disabling mods one by one or using a binary search method to identify the problematic mod.");
-        if (methodName != null) {
-            logger.error("Mods authors should use {} instead of sending packets directly.", methodName);
-        } else {
-            logger.error("Mod authors should not send this packet directly.");
-        }
+        logger.error("Mods authors should use " + yarnMethod + " (Yarn) or " + mojmapMethod + " (Mojmap) instead of sending packets directly.");
         logger.error("Need help? Join our Discord: https://discord.gg/viaversion");
         logger.error("===========================================");
     }
