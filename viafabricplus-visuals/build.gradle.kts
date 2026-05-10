@@ -1,7 +1,7 @@
 import de.florianreuth.baseproject.fabricApiVersion
 
 plugins {
-    id("fabric-loom")
+    id("net.fabricmc.fabric-loom")
 }
 
 dependencies {

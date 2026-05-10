@@ -1,7 +1,7 @@
 import de.florianreuth.baseproject.*
 
 plugins {
-    id("fabric-loom")
+    id("net.fabricmc.fabric-loom")
     id("de.florianreuth.baseproject")
 }
 

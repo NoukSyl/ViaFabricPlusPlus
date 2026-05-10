@@ -7,13 +7,13 @@ pluginManagement {
     }
 
     plugins {
-        id("fabric-loom") version "1.9.2"
+        id("net.fabricmc.fabric-loom") version "1.9.2"
         id("de.florianreuth.baseproject") version "2.0.2"
     }
 
     resolutionStrategy {
         eachPlugin {
-            if (requested.id.id == "fabric-loom") {
+            if (requested.id.id == "net.fabricmc.fabric-loom" || requested.id.id == "fabric-loom") {
                 useModule("net.fabricmc:fabric-loom:1.9.2")
             }
         }
