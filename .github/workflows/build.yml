@@ -18,7 +18,7 @@ jobs:
           java-version: 21
           check-latest: true
       - name: Build with Gradle
-        run: ./gradlew build
+        run: bash gradlew build
       - name: Upload Artifacts to GitHub
         uses: actions/upload-artifact@v4
         with:
