@@ -34,7 +34,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(EnderPearlItem.class)
-public abstract class MixinEnderPearlItem {
+public abstract class MixinEnderpearlItem {
 
     @Inject(method = "use", at = @At("HEAD"), cancellable = true)
     private void removeCreativeModeEnderPearl(World world, PlayerEntity user, Hand hand, CallbackInfoReturnable<ActionResult> ci) {

@@ -37,7 +37,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(FlowerbedBlock.class)
-public abstract class MixinFlowerbedBlock {
+public abstract class MixinFlowerBedBlock {
 
     @Unique
     private static final VoxelShape viaFabricPlus$shape_r1_20_1 = Block.createCuboidShape(0.0D, 0.0D, 0.0D, 16.0D, 3.0D, 16.0D);
