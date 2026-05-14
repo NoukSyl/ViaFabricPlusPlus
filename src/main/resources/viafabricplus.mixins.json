@@ -159,7 +159,7 @@
     "features.item.interaction.MixinBrushItem",
     "features.item.interaction.MixinBucketItem",
     "features.item.interaction.MixinBundleItem",
-    "features.item.interaction.MixinEnderPearlItem",
+    "features.item.interaction.MixinEnderpearlItem",
     "features.item.interaction.MixinEquippableComponent",
     "features.item.interaction.MixinFireChargeItem",
     "features.item.interaction.MixinFishingRodItem",
