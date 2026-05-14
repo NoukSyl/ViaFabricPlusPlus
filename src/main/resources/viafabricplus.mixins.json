@@ -68,7 +68,7 @@
     "features.block.shape.MixinFenceBlock",
     "features.block.shape.MixinFenceGateBlock",
     "features.block.shape.MixinFireBlock",
-    "features.block.shape.MixinFlowerbedBlock",
+    "features.block.shape.MixinFlowerBedBlock",
     "features.block.shape.MixinHopperBlock",
     "features.block.shape.MixinLadderBlock",
     "features.block.shape.MixinLeavesBlock",
