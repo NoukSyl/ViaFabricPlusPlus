@@ -19,7 +19,7 @@ repositories {
     }
     maven {
         name = "Lenni0451"
-        url = "https://maven.lenni0451.net/everything"
+        url = "https://maven.lenni0451.net/snapshots"
     }
     maven {
         name = "OpenCollab Snapshots"
@@ -58,7 +58,7 @@ dependencies {
         exclude group: "org.slf4j", module: "slf4j-api"
     }
     vvDependencies "net.raphimc:ViaLegacy:3.0.10-20250426.140714-8"
-    vvDependencies("net.raphimc:ViaBedrock:0.0.16-20250404.165607-5") {
+    vvDependencies("net.raphimc:ViaBedrock:0.0.27-SNAPSHOT") {
         exclude group: "io.jsonwebtoken"
         exclude group: "com.mojang", module: "brigadier"
     }
